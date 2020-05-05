@@ -31,12 +31,10 @@ import java.util.Arrays;
 
 public class Binary {
 
-    //From Nukkit Binary.java, will need replacing
     public static int readInt(byte[] bytes) {
         return ((bytes[0] & 0xff) << 24) + ((bytes[1] & 0xff) << 16) + ((bytes[2] & 0xff) << 8) + (bytes[3] & 0xff);
     }
 
-    //From Nukkit Binary.java, will need replacing
     public static byte[] writeInt(int i) {
         return new byte[]{
                 (byte) ((i >>> 24) & 0xFF),
@@ -46,23 +44,19 @@ public class Binary {
         };
     }
 
-    //From Nukkit Binary.java, will need replacing
     public static int readShort(byte[] bytes) {
         return ((bytes[0] & 0xFF) << 8) + (bytes[1] & 0xFF);
     }
 
-    //From Nukkit Binary.java, will need replacing
     public static byte[] subBytes(byte[] bytes, int start, int length) {
         int len = Math.min(bytes.length, start + length);
         return Arrays.copyOfRange(bytes, start, len);
     }
 
-    //I made this :3
     public static byte[] writeString(String string) {
         return string.getBytes(StandardCharsets.UTF_8);
     }
 
-    //and this :3
     public static byte[] writeShort(short s) {
         return new byte[] { (byte) (s & 0xff), (byte) ((s >> 8) & 0xff) };
     }

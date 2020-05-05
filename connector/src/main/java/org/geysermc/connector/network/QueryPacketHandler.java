@@ -129,13 +129,8 @@ public class QueryPacketHandler {
         reply.writeBytes(getGameData());
 
         // Players
-        reply.writeBytes(new byte[]{0x00, 0x01});
-        reply.writeBytes("player_".getBytes());
-        reply.writeBytes(new byte[]{0x00, 0x00});
-        reply.writeBytes("james090500".getBytes());
-        reply.writeByte((byte) 0x00);
+        reply.writeBytes(getPlayers());
 
-        reply.writeByte((byte) 0x00);
         sendPacket(reply);
     }
 
@@ -150,10 +145,9 @@ public class QueryPacketHandler {
         String currentPlayerCount;
         String maxPlayerCount;
 
-        //If ping pass through is enabled lets get players from the server
+        // If ping pass through is enabled lets get players from the server
         if (connector.getConfig().isPingPassthrough()) {
-            IGeyserPingPassthrough pingPassthrough = connector.getBootstrap().getGeyserPingPassthrough();
-            pingInfo = pingPassthrough.getPingInformation();
+            pingInfo = connector.getBootstrap().getGeyserPingPassthrough().getPingInformation();
             currentPlayerCount = String.valueOf(pingInfo.currentPlayerCount);
             maxPlayerCount = String.valueOf(pingInfo.maxPlayerCount);
         } else {
@@ -161,7 +155,7 @@ public class QueryPacketHandler {
             maxPlayerCount = String.valueOf(connector.getConfig().getMaxPlayers());
         }
 
-        //Create a hashmap of all game data needed in the query
+        // Create a hashmap of all game data needed in the query
         HashMap<String, String> gameData = new HashMap<String, String>();
         gameData.put("hostname", connector.getConfig().getBedrock().getMotd1());
         gameData.put("gametype", "SMP");
@@ -175,19 +169,46 @@ public class QueryPacketHandler {
         gameData.put("hostip", connector.getConfig().getBedrock().getAddress());
 
         try {
-            //Blank Buffer Bytes
+            // Blank Buffer Bytes
             query.write("GeyserMC".getBytes());
             query.write((byte) 0x00);
             query.write((byte) 128);
             query.write((byte) 0x00);
 
-            //Fills the game data
+            // Fills the game data
             for(Map.Entry<String, String> entry : gameData.entrySet()) {
                 query.write(entry.getKey().getBytes());
                 query.write((byte) 0x00);
                 query.write(entry.getValue().getBytes());
                 query.write((byte) 0x00);
             }
+
+            // Final byte to show the end of the game data
+            query.write(new byte[]{0x00, 0x01});
+            return query.toByteArray();
+        } catch (IOException e) {
+            e.printStackTrace();
+            return new byte[0];
+        }
+    }
+
+    private byte[] getPlayers() {
+        ByteArrayOutputStream query = new ByteArrayOutputStream();
+        GeyserPingInfo pingInfo = connector.getBootstrap().getGeyserPingPassthrough().getPingInformation();
+
+        try {
+            // Start the player section
+            query.write("player_".getBytes());
+            query.write(new byte[]{0x00, 0x00});
+
+            // Fill player names
+            for(String username : pingInfo.getPlayers()) {
+                query.write(username.getBytes());
+                query.write((byte) 0x00);
+            }
+
+            // Final byte to show the end of the player data
+            query.write((byte) 0x00);
             return query.toByteArray();
         } catch (IOException e) {
             e.printStackTrace();
@@ -212,20 +233,15 @@ public class QueryPacketHandler {
             token[i] = (byte) new Random().nextInt(255);
         }
 
-        for (int i = 0; i < 16; i++) {
-            System.out.print(token[i] + ", ");
-        }
-
         this.token = token;
     }
 
     /**
-     * ALL CODE BELOW IS NUKKIT, THIS WILL NEED REPLACING
+     * Nukkit Code
+     * @param token
+     * @param address
+     * @return
      */
-    public static byte[] getTokenString(String token, InetAddress address) {
-        return getTokenString(token.getBytes(StandardCharsets.UTF_8), address);
-    }
-
     public static byte[] getTokenString(byte[] token, InetAddress address) {
         try {
             MessageDigest digest = MessageDigest.getInstance("MD5");
