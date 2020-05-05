@@ -25,17 +25,17 @@
 
 package org.geysermc.connector.network;
 
-import com.github.steveice10.mc.protocol.data.message.Message;
-import com.nukkitx.protocol.bedrock.BedrockPong;
-import com.nukkitx.protocol.bedrock.BedrockServerEventHandler;
-import com.nukkitx.protocol.bedrock.BedrockServerSession;
+import com.nukkitx.protocol.bedrock.*;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufUtil;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.socket.DatagramPacket;
 import org.geysermc.common.IGeyserConfiguration;
 import org.geysermc.common.ping.GeyserPingInfo;
 import org.geysermc.common.ping.IGeyserPingPassthrough;
 import org.geysermc.connector.GeyserConnector;
 import org.geysermc.connector.network.session.GeyserSession;
-import org.geysermc.connector.utils.MessageUtils;
 
 import java.net.InetSocketAddress;
 
@@ -112,5 +112,11 @@ public class ConnectorServerEventHandler implements BedrockServerEventHandler {
             }
         });
         bedrockServerSession.setPacketCodec(GeyserConnector.BEDROCK_PACKET_CODEC);
+    }
+
+    @Override
+    public void onUnhandledDatagram(ChannelHandlerContext ctx, DatagramPacket packet) {
+        byte[] bytes = ByteBufUtil.getBytes(packet.content());
+        new QueryPacketHandler(connector, packet.sender(), bytes);
     }
 }
