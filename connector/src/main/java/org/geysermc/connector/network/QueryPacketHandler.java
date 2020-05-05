@@ -71,8 +71,6 @@ public class QueryPacketHandler {
         this.sender = sender;
         this.type = buffer.readByte();
         this.sessionId = buffer.readInt();
-        //if(buffer.readableBytes() > 7)
-            this.payload = buffer.slice(7, 4).readInt();
 
         regenerateToken();
         handle();
