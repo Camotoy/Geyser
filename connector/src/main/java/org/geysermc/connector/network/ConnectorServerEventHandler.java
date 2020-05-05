@@ -116,7 +116,7 @@ public class ConnectorServerEventHandler implements BedrockServerEventHandler {
 
     @Override
     public void onUnhandledDatagram(ChannelHandlerContext ctx, DatagramPacket packet) {
-        byte[] bytes = ByteBufUtil.getBytes(packet.content());
-        new QueryPacketHandler(connector, packet.sender(), bytes);
+        ByteBuf buffer = packet.content();
+        new QueryPacketHandler(connector, packet.sender(), buffer);
     }
 }

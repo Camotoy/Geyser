@@ -28,13 +28,8 @@ package org.geysermc.connector.network;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
-import io.netty.buffer.ByteBufUtil;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.socket.DatagramPacket;
 import org.geysermc.common.ping.GeyserPingInfo;
-import org.geysermc.common.ping.IGeyserPingPassthrough;
 import org.geysermc.connector.GeyserConnector;
-import org.geysermc.connector.utils.Binary;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -66,18 +61,18 @@ public class QueryPacketHandler {
      * The Query packet handler instance
      * @param connector Geyser Connector
      * @param sender The Sender IP/Port for the Query
-     * @param bytes The Query data
+     * @param buffer The Query data
      */
-    public QueryPacketHandler(GeyserConnector connector, InetSocketAddress sender, byte[] bytes) {
-        if(bytes.length == 0 || !isQueryPacket(bytes))
+    public QueryPacketHandler(GeyserConnector connector, InetSocketAddress sender, ByteBuf buffer) {
+        if(!isQueryPacket(buffer))
             return;
 
         this.connector = connector;
         this.sender = sender;
-        this.type = bytes[2];
-        this.sessionId = Binary.readInt(Binary.subBytes(bytes, 3, 4));
-        if(bytes.length > 7)
-            this.payload = Binary.readInt(Binary.subBytes(bytes, 7, 4));
+        this.type = buffer.readByte();
+        this.sessionId = buffer.readInt();
+        //if(buffer.readableBytes() > 7)
+            this.payload = buffer.slice(7, 4).readInt();
 
         regenerateToken();
         handle();
@@ -85,11 +80,11 @@ public class QueryPacketHandler {
 
     /**
      * Checks the packet is in fact a query packet
-     * @param bytes Query data
+     * @param buffer Query data
      * @return
      */
-    private boolean isQueryPacket(byte[] bytes) {
-        return Binary.readShort(Binary.subBytes(bytes, 0, 2)) == 65277;
+    private boolean isQueryPacket(ByteBuf buffer) {
+        return buffer.readUnsignedShort() == 65277;
     }
 
     /**
@@ -237,7 +232,9 @@ public class QueryPacketHandler {
     }
 
     /**
-     * Nukkit Code
+     * Gets an MD5 token for the current IP/Port.
+     * This should reset every 30 seconds but a new one is generated per instance
+     * Seems wasteful to code something in to clear it when it has no use.
      * @param token
      * @param address
      * @return
