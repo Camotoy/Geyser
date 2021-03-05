@@ -141,6 +141,8 @@ public class GeyserSession implements CommandSender {
     private final Map<Vector3i, SkullPlayerEntity> skullCache = new ConcurrentHashMap<>();
     private final Long2ObjectMap<ClientboundMapItemDataPacket> storedMaps = Long2ObjectMaps.synchronize(new Long2ObjectOpenHashMap<>());
 
+    private final LodestoneTracker lodestoneTracker = new LodestoneTracker();
+
     /**
      * A map of Vector3i positions to Java entity IDs.
      * Used for translating Bedrock block actions to Java entity actions.

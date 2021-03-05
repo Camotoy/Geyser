@@ -36,7 +36,7 @@ import org.geysermc.connector.network.session.GeyserSession;
 import org.geysermc.connector.network.translators.PacketTranslator;
 import org.geysermc.connector.network.translators.Translator;
 import org.geysermc.connector.utils.DimensionUtils;
-import org.geysermc.connector.utils.LoadstoneTracker;
+import org.geysermc.connector.network.session.cache.LodestoneTracker;
 
 @Translator(packet = PositionTrackingDBClientRequestPacket.class)
 public class BedrockPositionTrackingDBClientRequestTranslator extends PacketTranslator<PositionTrackingDBClientRequestPacket> {
@@ -46,8 +46,8 @@ public class BedrockPositionTrackingDBClientRequestTranslator extends PacketTran
         PositionTrackingDBServerBroadcastPacket broadcastPacket = new PositionTrackingDBServerBroadcastPacket();
         broadcastPacket.setTrackingId(packet.getTrackingId());
 
-        // Fetch the stored Loadstone
-        LoadstoneTracker.LoadstonePos pos = LoadstoneTracker.getPos(packet.getTrackingId());
+        // Fetch the stored Lodestone
+        LodestoneTracker.LodestonePos pos = session.getLodestoneTracker().getPos(packet.getTrackingId());
 
         // If we don't have data for that ID tell the client its not found
         if (pos == null) {
@@ -67,7 +67,7 @@ public class BedrockPositionTrackingDBClientRequestTranslator extends PacketTran
         builder.putByte("status", (byte) 0); // Not sure what this is for
 
         // Build the position for the update
-        IntList posList = new IntArrayList();
+        IntList posList = new IntArrayList(3);
         posList.add(pos.getX());
         posList.add(pos.getY());
         posList.add(pos.getZ());

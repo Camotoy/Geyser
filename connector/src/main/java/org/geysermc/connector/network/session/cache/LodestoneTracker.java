@@ -23,7 +23,7 @@
  * @link https://github.com/GeyserMC/Geyser
  */
 
-package org.geysermc.connector.utils;
+package org.geysermc.connector.network.session.cache;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -31,50 +31,50 @@ import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
-public class LoadstoneTracker {
+public class LodestoneTracker {
 
-    private static final Int2ObjectMap<LoadstonePos> LOADSTONES = new Int2ObjectOpenHashMap<>();
+    private final Int2ObjectMap<LodestonePos> lodestones = new Int2ObjectOpenHashMap<>();
 
     /**
      * Store the given coordinates and dimensions
      *
-     * @param x The X position of the Loadstone
-     * @param y The Y position of the Loadstone
-     * @param z The Z position of the Loadstone
-     * @param dim The dimension containing of the Loadstone
+     * @param x The X position of the Lodestone
+     * @param y The Y position of the Lodestone
+     * @param z The Z position of the Lodestone
+     * @param dim The dimension containing of the Lodestone
      * @return The id in the Map
      */
-    public static int store(int x, int y, int z, String dim) {
-        LoadstonePos pos = new LoadstonePos(x, y, z, dim);
+    public int store(int x, int y, int z, String dim) {
+        LodestonePos pos = new LodestonePos(x, y, z, dim);
 
-        if (!LOADSTONES.containsValue(pos)) {
-            // Start at 1 as 0 seems to not work
-            LOADSTONES.put(LOADSTONES.size() + 1, pos);
-        }
-
-        for (Int2ObjectMap.Entry<LoadstonePos> loadstone : LOADSTONES.int2ObjectEntrySet()) {
-            if (loadstone.getValue().equals(pos)) {
-                return loadstone.getIntKey();
+        for (Int2ObjectMap.Entry<LodestonePos> lodestone : lodestones.int2ObjectEntrySet()) {
+            if (lodestone.getValue().equals(pos)) {
+                return lodestone.getIntKey();
             }
         }
 
-        return 0;
+        // Otherwise, the position doesn't already exist
+        // Start at 1 as 0 seems to not work
+        int id = lodestones.size() + 1;
+        lodestones.put(id, pos);
+
+        return id;
     }
 
     /**
-     * Get the loadstone data
+     * Get the lodestone data
      *
      * @param id The ID to get the data for
      * @return The stored data
      */
-    public static LoadstonePos getPos(int id) {
-        return LOADSTONES.get(id);
+    public LodestonePos getPos(int id) {
+        return lodestones.get(id);
     }
 
     @Getter
     @AllArgsConstructor
     @EqualsAndHashCode
-    public static class LoadstonePos {
+    public static class LodestonePos {
         int x;
         int y;
         int z;
