@@ -25,7 +25,6 @@
 
 package org.geysermc.connector.network.translators.java.world;
 
-import com.github.steveice10.mc.protocol.data.game.world.effect.ParticleEffect;
 import com.github.steveice10.mc.protocol.data.game.world.effect.*;
 import com.github.steveice10.mc.protocol.packet.ingame.server.world.ServerPlayEffectPacket;
 import com.nukkitx.math.vector.Vector3f;
@@ -38,13 +37,12 @@ import org.geysermc.connector.GeyserConnector;
 import org.geysermc.connector.network.session.GeyserSession;
 import org.geysermc.connector.network.translators.PacketTranslator;
 import org.geysermc.connector.network.translators.Translator;
-import org.geysermc.connector.network.translators.world.block.BlockTranslator;
 import org.geysermc.connector.network.translators.effect.Effect;
 import org.geysermc.connector.network.translators.effect.EffectRegistry;
+import org.geysermc.connector.network.translators.world.block.BlockTranslator;
 import org.geysermc.connector.utils.LocaleUtils;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Collections;
 import java.util.Locale;
 
 @Translator(packet = ServerPlayEffectPacket.class)
@@ -76,10 +74,8 @@ public class JavaPlayEffectTranslator extends PacketTranslator<ServerPlayEffectP
                 textPacket.setPlatformChatId("");
                 textPacket.setSourceName(null);
                 textPacket.setMessage("record.nowPlaying");
-                List<String> params = new ArrayList<>();
                 String recordString = "%item." + soundEvent.name().toLowerCase(Locale.ROOT) + ".desc";
-                params.add(LocaleUtils.getLocaleString(recordString, session.getLocale()));
-                textPacket.setParameters(params);
+                textPacket.setParameters(Collections.singletonList(LocaleUtils.getLocaleString(recordString, session.getLocale())));
                 session.sendUpstreamPacket(textPacket);
             }
             return;
@@ -205,7 +201,7 @@ public class JavaPlayEffectTranslator extends PacketTranslator<ServerPlayEffectP
                     effectPacket.setType(LevelEventType.PARTICLE_DESTROY_BLOCK);
 
                     BreakBlockEffectData breakBlockEffectData = (BreakBlockEffectData) packet.getData();
-                    effectPacket.setData(BlockTranslator.getBedrockBlockId(breakBlockEffectData.getBlockState()));
+                    effectPacket.setData(session.getBlockTranslator().getBedrockBlockId(breakBlockEffectData.getBlockState()));
                     break;
                 }
                 case BREAK_SPLASH_POTION: {

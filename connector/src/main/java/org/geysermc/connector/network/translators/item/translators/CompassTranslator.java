@@ -47,7 +47,7 @@ public class CompassTranslator extends ItemTranslator {
     }
 
     @Override
-    public ItemData translateToBedrock(ItemStack itemStack, ItemEntry itemEntry) {
+    public ItemData.Builder translateToBedrock(ItemStack itemStack, ItemEntry itemEntry) {
         if (itemStack.getNbt() == null) return super.translateToBedrock(itemStack, itemEntry);
 
         Tag lodestoneTag = itemStack.getNbt().get("LodestoneTracked");
