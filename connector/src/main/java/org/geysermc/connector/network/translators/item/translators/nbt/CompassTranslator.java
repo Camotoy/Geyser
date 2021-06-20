@@ -62,7 +62,7 @@ public class CompassTranslator extends NbtItemStackTranslator {
 
             // Set the bedrock tracking ID
             itemTag.put(new IntTag("trackingHandle", trackID));
-        } else {
+        } else if (itemEntry.getBedrockIdentifier().equals("minecraft:lodestone_compass")) {
             // The lodestone was removed; just set the tracking id to 0
             itemTag.put(new IntTag("trackingHandle", 0));
         }
@@ -70,25 +70,8 @@ public class CompassTranslator extends NbtItemStackTranslator {
 
     @Override
     public void translateToJava(CompoundTag itemTag, ItemEntry itemEntry) {
-        // Get the tracking id
-//        Tag trackingHandle =  itemTag.get("trackingHandle");
-//        if (trackingHandle != null) {
-//            int trackingID = ((IntTag) trackingHandle).getValue();
-//
-//            // Fetch the tracking info from the id
-//            LodestoneTracker.LodestonePos pos = .getPos(trackingID);
-//            if (pos != null) {
-//                // Build the new NBT data for the fetched tracking info
-//                itemTag.put(new StringTag("LodestoneDimension", pos.getDimension()));
-//
-//                CompoundTag posTag = new CompoundTag("LodestonePos");
-//                posTag.put(new IntTag("X", pos.getX()));
-//                posTag.put(new IntTag("Y", pos.getY()));
-//                posTag.put(new IntTag("Z", pos.getZ()));
-//
-//                itemTag.put(posTag);
-//            }
-//        }
+        // As of 1.17, this function cannot be called on any item from a player inventory that was given NBT
+        // Basically, there should be no way we need to reverse translate the position
     }
 
     @Override

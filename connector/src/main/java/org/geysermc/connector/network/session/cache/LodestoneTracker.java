@@ -75,9 +75,9 @@ public class LodestoneTracker {
     @AllArgsConstructor
     @EqualsAndHashCode
     public static class LodestonePos {
-        int x;
-        int y;
-        int z;
-        String dimension;
+        final int x;
+        final int y;
+        final int z;
+        final String dimension;
     }
 }
