@@ -25,7 +25,7 @@
 
 package org.geysermc.connector.network.translators.world.block;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import com.nukkitx.nbt.NbtMap;
 import it.unimi.dsi.fastutil.ints.*;
 
 import java.util.Map;
@@ -66,16 +66,16 @@ public class BlockStateValues {
      * @param javaBlockState the Java Block State of the block
      * @param blockData      JsonNode of info about the block from blocks.json
      */
-    public static void storeBlockStateValues(String javaId, int javaBlockState, JsonNode blockData) {
-        JsonNode bannerColor = blockData.get("banner_color");
-        if (bannerColor != null) {
-            BANNER_COLORS.put(javaBlockState, (byte) bannerColor.intValue());
+    public static void storeBlockStateValues(String javaId, int javaBlockState, NbtMap blockData) {
+        byte bannerColor = blockData.getByte("banner_color", (byte) -1);
+        if (bannerColor != -1) {
+            BANNER_COLORS.put(javaBlockState, bannerColor);
             return; // There will never be a banner color and a skull variant
         }
 
-        JsonNode bedColor = blockData.get("bed_color");
-        if (bedColor != null) {
-            BED_COLORS.put(javaBlockState, (byte) bedColor.intValue());
+        byte bedColor = blockData.getByte("bed_color", (byte) -1);
+        if (bedColor != -1) {
+            BED_COLORS.put(javaBlockState, bedColor);
             return;
         }
 
@@ -84,11 +84,11 @@ public class BlockStateValues {
             return;
         }
 
-        if (blockData.get("double_chest_position") != null) {
-            boolean isX = (blockData.get("x") != null);
-            boolean isDirectionPositive = ((blockData.get("x") != null && blockData.get("x").asBoolean()) ||
-                    (blockData.get("z") != null && blockData.get("z").asBoolean()));
-            boolean isLeft = (blockData.get("double_chest_position").asText().contains("left"));
+        String doubleChestPosition = blockData.getString("double_chest_position", null);
+        if (doubleChestPosition != null) {
+            boolean isX = blockData.getBoolean("x", false);
+            boolean isDirectionPositive = isX || blockData.getBoolean("z", false);
+            boolean isLeft = doubleChestPosition.contains("left");
             DOUBLE_CHEST_VALUES.put(javaBlockState, new DoubleChestValue(isX, isDirectionPositive, isLeft));
             return;
         }
@@ -108,9 +108,9 @@ public class BlockStateValues {
             return;
         }
 
-        JsonNode notePitch = blockData.get("note_pitch");
-        if (notePitch != null) {
-            NOTEBLOCK_PITCHES.put(javaBlockState, blockData.get("note_pitch").intValue());
+        int notePitch = blockData.getInt("note_pitch", -1);
+        if (notePitch != -1) {
+            NOTEBLOCK_PITCHES.put(javaBlockState, notePitch);
             return;
         }
 
@@ -121,14 +121,14 @@ public class BlockStateValues {
             return;
         }
 
-        JsonNode skullVariation = blockData.get("variation");
-        if (skullVariation != null) {
-            SKULL_VARIANTS.put(javaBlockState, (byte) skullVariation.intValue());
+        byte skullVariation = blockData.getByte("variation", (byte) -1);
+        if (skullVariation != -1) {
+            SKULL_VARIANTS.put(javaBlockState, skullVariation);
         }
 
-        JsonNode skullRotation = blockData.get("skull_rotation");
-        if (skullRotation != null) {
-            SKULL_ROTATIONS.put(javaBlockState, (byte) skullRotation.intValue());
+        byte skullRotation = blockData.getByte("skull_rotation", (byte) -1);
+        if (skullRotation != -1) {
+            SKULL_ROTATIONS.put(javaBlockState, skullRotation);
         }
 
         if (javaId.contains("wall_skull") || javaId.contains("wall_head")) {
@@ -151,9 +151,9 @@ public class BlockStateValues {
             SKULL_WALL_DIRECTIONS.put(javaBlockState, rotation);
         }
 
-        JsonNode shulkerDirection = blockData.get("shulker_direction");
-        if (shulkerDirection != null) {
-            BlockStateValues.SHULKERBOX_DIRECTIONS.put(javaBlockState, (byte) shulkerDirection.intValue());
+        byte shulkerDirection = blockData.getByte("shulker_direction", (byte) -1);
+        if (shulkerDirection != -1) {
+            BlockStateValues.SHULKERBOX_DIRECTIONS.put(javaBlockState, shulkerDirection);
         }
 
         if (javaId.startsWith("minecraft:water")) {
