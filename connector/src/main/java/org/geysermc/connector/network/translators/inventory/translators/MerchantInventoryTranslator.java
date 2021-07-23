@@ -28,7 +28,6 @@ package org.geysermc.connector.network.translators.inventory.translators;
 import com.github.steveice10.mc.protocol.data.game.window.WindowType;
 import com.nukkitx.math.vector.Vector3f;
 import com.nukkitx.protocol.bedrock.data.entity.EntityData;
-import com.nukkitx.protocol.bedrock.data.entity.EntityDataMap;
 import com.nukkitx.protocol.bedrock.data.entity.EntityLinkData;
 import com.nukkitx.protocol.bedrock.data.inventory.ContainerSlotType;
 import com.nukkitx.protocol.bedrock.data.inventory.ItemStackRequest;
@@ -109,13 +108,11 @@ public class MerchantInventoryTranslator extends BaseInventoryTranslator {
             long geyserId = session.getEntityCache().getNextEntityId().incrementAndGet();
             Vector3f pos = session.getPlayerEntity().getPosition().sub(0, 3, 0);
 
-            EntityDataMap metadata = new EntityDataMap();
-            metadata.put(EntityData.SCALE, 0f);
-            metadata.put(EntityData.BOUNDING_BOX_WIDTH, 0f);
-            metadata.put(EntityData.BOUNDING_BOX_HEIGHT, 0f);
-
             Entity villager = new Entity(0, geyserId, EntityType.VILLAGER, pos, Vector3f.ZERO, Vector3f.ZERO);
-            villager.setMetadata(metadata);
+            villager.getMetadata().clear();
+            villager.getMetadata().put(EntityData.SCALE, 0f);
+            villager.getMetadata().put(EntityData.BOUNDING_BOX_WIDTH, 0f);
+            villager.getMetadata().put(EntityData.BOUNDING_BOX_HEIGHT, 0f);
             villager.spawnEntity(session);
 
             SetEntityLinkPacket linkPacket = new SetEntityLinkPacket();

@@ -1074,6 +1074,9 @@ public class GeyserSession implements CommandSender {
         settings.setServerAuthoritativeBlockBreaking(false);
         startGamePacket.setPlayerMovementSettings(settings);
 
+        startGamePacket.getExperiments().add(new ExperimentData("data_driven_items", true));
+        startGamePacket.getExperiments().add(new ExperimentData("upcoming_creator_features", true));
+
         if (connector.getConfig().isExtendedWorldHeight()) {
             startGamePacket.getExperiments().add(new ExperimentData("caves_and_cliffs", true));
         }

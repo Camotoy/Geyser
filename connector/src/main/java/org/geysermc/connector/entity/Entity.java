@@ -29,14 +29,14 @@ import com.github.steveice10.mc.protocol.data.game.entity.metadata.EntityMetadat
 import com.github.steveice10.mc.protocol.data.game.entity.metadata.MetadataType;
 import com.github.steveice10.mc.protocol.data.game.entity.metadata.Pose;
 import com.nukkitx.math.vector.Vector3f;
+import com.nukkitx.nbt.NbtMap;
+import com.nukkitx.nbt.NbtMapBuilder;
+import com.nukkitx.nbt.NbtType;
 import com.nukkitx.protocol.bedrock.data.entity.EntityData;
 import com.nukkitx.protocol.bedrock.data.entity.EntityDataMap;
 import com.nukkitx.protocol.bedrock.data.entity.EntityFlag;
 import com.nukkitx.protocol.bedrock.data.entity.EntityFlags;
-import com.nukkitx.protocol.bedrock.packet.AddEntityPacket;
-import com.nukkitx.protocol.bedrock.packet.MoveEntityAbsolutePacket;
-import com.nukkitx.protocol.bedrock.packet.RemoveEntityPacket;
-import com.nukkitx.protocol.bedrock.packet.SetEntityDataPacket;
+import com.nukkitx.protocol.bedrock.packet.*;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import lombok.Getter;
 import lombok.Setter;
@@ -72,7 +72,9 @@ public class Entity {
     protected boolean valid;
 
     protected LongOpenHashSet passengers = new LongOpenHashSet();
-    protected EntityDataMap metadata = new EntityDataMap();
+    protected final EntityDataMap metadata = new EntityDataMap();
+
+    protected final NbtMap properties;
 
     public Entity(long entityId, long geyserId, EntityType entityType, Vector3f position, Vector3f motion, Vector3f rotation) {
         this.entityId = entityId;
@@ -80,6 +82,7 @@ public class Entity {
         this.entityType = entityType;
         this.motion = motion;
         this.rotation = rotation;
+        this.properties = constructEntityProperties();
 
         this.valid = false;
 
@@ -101,6 +104,12 @@ public class Entity {
     }
 
     public void spawnEntity(GeyserSession session) {
+        if (hasEntityProperties()) {
+            SyncEntityPropertyPacket propertyPacket = new SyncEntityPropertyPacket();
+            propertyPacket.setData(properties);
+            session.sendUpstreamPacket(propertyPacket);
+        }
+
         AddEntityPacket addEntityPacket = new AddEntityPacket();
         addEntityPacket.setIdentifier(entityType.getIdentifier());
         addEntityPacket.setRuntimeEntityId(geyserId);
@@ -341,6 +350,24 @@ public class Entity {
 
     protected int getMaxAir() {
         return 300;
+    }
+
+    protected boolean hasEntityProperties() {
+        // Equality check here is fine as it should be a reference to the empty NbtMap variable
+        return properties != NbtMap.EMPTY;
+    }
+
+    protected NbtMap constructEntityProperties() {
+        return NbtMap.EMPTY;
+    }
+
+    @SafeVarargs
+    protected final <T> NbtMap createProperty(NbtType<T> nbtType, T defaultOption, T... options) {
+        NbtMapBuilder builder = NbtMap.builder();
+        builder.put("default", defaultOption);
+        builder.putList("enum", nbtType, options);
+        builder.putInt("type", nbtType.getId());
+        return builder.build();
     }
 
     /**

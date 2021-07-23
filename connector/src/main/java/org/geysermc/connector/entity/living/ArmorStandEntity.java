@@ -29,6 +29,9 @@ import com.github.steveice10.mc.protocol.data.game.entity.metadata.EntityMetadat
 import com.github.steveice10.mc.protocol.data.game.entity.metadata.MetadataType;
 import com.github.steveice10.mc.protocol.data.game.entity.metadata.Rotation;
 import com.nukkitx.math.vector.Vector3f;
+import com.nukkitx.nbt.NbtMap;
+import com.nukkitx.nbt.NbtMapBuilder;
+import com.nukkitx.nbt.NbtType;
 import com.nukkitx.protocol.bedrock.data.entity.EntityData;
 import com.nukkitx.protocol.bedrock.data.entity.EntityFlag;
 import com.nukkitx.protocol.bedrock.data.inventory.ItemData;
@@ -76,6 +79,13 @@ public class ArmorStandEntity extends LivingEntity {
 
     public ArmorStandEntity(long entityId, long geyserId, EntityType entityType, Vector3f position, Vector3f motion, Vector3f rotation) {
         super(entityId, geyserId, entityType, position, motion, rotation);
+
+        metadata.put(EntityData.BASE_RUNTIME_ID, NbtMap.builder()
+                .putInt("property:number_enum_example", 2)
+                .putBoolean("property:boolean_enum_example", false)
+                .putInt("property:number_range_example", 0)
+                .build());
+        System.out.println(metadata.getTag(EntityData.BASE_RUNTIME_ID));
     }
 
     @Override
@@ -437,5 +447,19 @@ public class ArmorStandEntity extends LivingEntity {
         moveEntityPacket.setOnGround(onGround);
         moveEntityPacket.setTeleported(false);
         session.sendUpstreamPacket(moveEntityPacket);
+    }
+
+    @Override
+    protected NbtMap constructEntityProperties() {
+        NbtMapBuilder builder = NbtMap.builder();
+        builder.putString("type", this.entityType.getIdentifier());
+        NbtMapBuilder properties = NbtMap.builder();
+        properties.putCompound("property:boolean_enum_example", createProperty(NbtType.BYTE, (byte) 0, (byte) 1, (byte) 0));
+        properties.putCompound("property:number_enum_example", createProperty(NbtType.INT, 1, 1, 2));
+        properties.putCompound("property:number_range_example", createProperty(NbtType.INT, 0, 1, 100));
+        builder.putCompound("properties", properties.build());
+        System.out.println(builder.build());
+
+        return builder.build();
     }
 }

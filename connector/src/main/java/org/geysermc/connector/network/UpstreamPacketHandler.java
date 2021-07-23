@@ -132,10 +132,10 @@ public class UpstreamPacketHandler extends LoggingPacketHandler {
                     stackPacket.getResourcePacks().add(new ResourcePackStackPacket.Entry(header.getUuid().toString(), header.getVersionString(), ""));
                 }
 
-                if (session.getItemMappings().getFurnaceMinecartData() != null) {
-                    // Allow custom items to work
-                    stackPacket.getExperiments().add(new ExperimentData("data_driven_items", true));
-                }
+                // Allow custom items to work
+                stackPacket.getExperiments().add(new ExperimentData("data_driven_items", true));
+                // Additional things needed for entity properties to work
+                stackPacket.getExperiments().add(new ExperimentData("upcoming_creator_features", true));
 
                 if (session.getConnector().getConfig().isExtendedWorldHeight()) {
                     // Allow extended world height in the overworld to work
