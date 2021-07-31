@@ -90,6 +90,7 @@ import org.geysermc.connector.network.translators.chat.MessageTranslator;
 import org.geysermc.connector.network.translators.collision.CollisionManager;
 import org.geysermc.connector.network.translators.inventory.InventoryTranslator;
 import org.geysermc.connector.registry.Registries;
+import org.geysermc.connector.registry.populator.BiomeRegistryPopulator;
 import org.geysermc.connector.registry.type.BlockMappings;
 import org.geysermc.connector.registry.type.ItemMappings;
 import org.geysermc.connector.skin.FloodgateSkinUploader;
@@ -498,7 +499,7 @@ public class GeyserSession implements CommandSender {
         ChunkUtils.sendEmptyChunks(this, playerEntity.getPosition().toInt(), 0, false);
 
         BiomeDefinitionListPacket biomeDefinitionListPacket = new BiomeDefinitionListPacket();
-        biomeDefinitionListPacket.setDefinitions(Registries.BIOMES_NBT.get());
+        biomeDefinitionListPacket.setDefinitions(Registries.BIOMES_NBT);
         upstream.sendPacket(biomeDefinitionListPacket);
 
         AvailableEntityIdentifiersPacket entityPacket = new AvailableEntityIdentifiersPacket();

@@ -23,13 +23,12 @@
  * @link https://github.com/GeyserMC/Geyser
  */
 
-package org.geysermc.connector.utils;
+package org.geysermc.connector.pack.resourcepack;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.ToString;
-import lombok.Value;
+import lombok.*;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -41,6 +40,8 @@ import java.util.UUID;
  */
 @Getter
 @EqualsAndHashCode
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_NULL) // else "dependencies" can render as null
 public class ResourcePackManifest {
     @JsonProperty("format_version")
     private Integer formatVersion;
@@ -48,12 +49,26 @@ public class ResourcePackManifest {
     private Collection<Module> modules;
     protected Collection<Dependency> dependencies;
 
+    public ResourcePackManifest(int formatVersion, Header header, Collection<Module> modules) {
+        this.formatVersion = formatVersion;
+        this.header = header;
+        this.modules = modules;
+    }
+
+    public static ResourcePackManifest createResource(String name, String description, int[] version) {
+        Header header = new Header(description, name, UUID.randomUUID(), version, new int[]{1, 16, 0});
+        Module module = new Module("resources", UUID.randomUUID(), version);
+        return new ResourcePackManifest(2, header, Collections.singleton(module));
+    }
+
     public Collection<Module> getModules() {
         return Collections.unmodifiableCollection(modules);
     }
 
     @Getter
     @ToString
+    @AllArgsConstructor
+    @NoArgsConstructor
     public static class Header {
         private String description;
         private String name;
@@ -62,6 +77,7 @@ public class ResourcePackManifest {
         @JsonProperty("min_engine_version")
         private int[] minimumSupportedMinecraftVersion;
 
+        @JsonIgnore
         public String getVersionString() {
             return version[0] + "." + version[1] + "." + version[2];
         }
@@ -69,9 +85,10 @@ public class ResourcePackManifest {
 
     @Getter
     @ToString
+    @AllArgsConstructor
+    @NoArgsConstructor
     public static class Module {
-        private String description;
-        private String name;
+        private String type;
         private UUID uuid;
         private int[] version;
     }
@@ -85,9 +102,9 @@ public class ResourcePackManifest {
 
     @Value
     public static class Version {
-        private final int major;
-        private final int minor;
-        private final int patch;
+        int major;
+        int minor;
+        int patch;
 
         public static Version fromString(String ver) {
             String[] split = ver.replace(']', ' ')

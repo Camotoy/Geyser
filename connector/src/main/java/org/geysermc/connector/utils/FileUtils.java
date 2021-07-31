@@ -163,10 +163,20 @@ public class FileUtils {
      * @return A byte[] representation of the hash
      */
     public static byte[] calculateSHA256(File file) {
+        return calculateSHA256(readAllBytes(file));
+    }
+
+    /**
+     * Calculate the SHA256 hash of a byte array
+     *
+     * @param data Data to calculate the hash for
+     * @return A byte[] representation of the hash
+     */
+    public static byte[] calculateSHA256(byte[] data) {
         byte[] sha256;
 
         try {
-            sha256 = MessageDigest.getInstance("SHA-256").digest(readAllBytes(file));
+            sha256 = MessageDigest.getInstance("SHA-256").digest(data);
         } catch (Exception e) {
             throw new RuntimeException("Could not calculate pack hash", e);
         }

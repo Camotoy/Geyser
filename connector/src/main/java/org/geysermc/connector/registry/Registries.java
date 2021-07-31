@@ -42,7 +42,9 @@ import org.geysermc.connector.network.translators.effect.Effect;
 import org.geysermc.connector.network.translators.sound.SoundHandler;
 import org.geysermc.connector.network.translators.sound.SoundInteractionHandler;
 import org.geysermc.connector.network.translators.world.block.entity.BlockEntityTranslator;
+import org.geysermc.connector.pack.resourcepack.BedrockResourcePack;
 import org.geysermc.connector.registry.loader.*;
+import org.geysermc.connector.registry.populator.BiomeRegistryPopulator;
 import org.geysermc.connector.registry.populator.ItemRegistryPopulator;
 import org.geysermc.connector.registry.populator.RecipeRegistryPopulator;
 import org.geysermc.connector.registry.type.ItemMappings;
@@ -60,7 +62,7 @@ public class Registries {
     /**
      * A registry holding a CompoundTag of all the known biomes.
      */
-    public static final SimpleRegistry<NbtMap> BIOMES_NBT = SimpleRegistry.create("bedrock/biome_definitions.dat", RegistryLoaders.NBT);
+    public static NbtMap BIOMES_NBT; //TODO
 
     /**
      * A mapped registry which stores Java biome identifiers and their Bedrock biome identifier.
@@ -115,6 +117,8 @@ public class Registries {
      */
     public static final SimpleMappedRegistry<Integer, SoundEvent> RECORDS = SimpleMappedRegistry.create(RegistryLoaders.empty(Int2ObjectOpenHashMap::new));
 
+    public static final SimpleMappedRegistry<String, BedrockResourcePack> RESOURCE_PACKS = SimpleMappedRegistry.create(ResourcePackRegistryLoader::new);
+
     /**
      * A mapped registry holding sound identifiers to their corresponding {@link SoundMapping}.
      */
@@ -137,6 +141,7 @@ public class Registries {
     static {
         ItemRegistryPopulator.populate();
         RecipeRegistryPopulator.populate();
+        BiomeRegistryPopulator.populate();
 
         // Create registries that require other registries to load first
         POTION_MIXES = SimpleRegistry.create(PotionMixRegistryLoader::new);

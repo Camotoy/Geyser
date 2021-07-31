@@ -35,11 +35,14 @@ import org.geysermc.connector.common.AuthType;
 import org.geysermc.connector.configuration.GeyserConfiguration;
 import org.geysermc.connector.network.session.GeyserSession;
 import org.geysermc.connector.network.translators.PacketTranslatorRegistry;
+import org.geysermc.connector.pack.resourcepack.BedrockResourcePack;
+import org.geysermc.connector.pack.resourcepack.ResourcePackManifest;
 import org.geysermc.connector.registry.BlockRegistries;
 import org.geysermc.connector.registry.Registries;
-import org.geysermc.connector.utils.*;
+import org.geysermc.connector.utils.LanguageUtils;
+import org.geysermc.connector.utils.LoginEncryptionUtils;
+import org.geysermc.connector.utils.MathUtils;
 
-import java.io.FileInputStream;
 import java.io.InputStream;
 
 public class UpstreamPacketHandler extends LoggingPacketHandler {
@@ -82,10 +85,10 @@ public class UpstreamPacketHandler extends LoggingPacketHandler {
         session.sendUpstreamPacket(playStatus);
 
         ResourcePacksInfoPacket resourcePacksInfo = new ResourcePacksInfoPacket();
-        for(ResourcePack resourcePack : ResourcePack.PACKS.values()) {
+        for(BedrockResourcePack resourcePack : Registries.RESOURCE_PACKS.get().values()) {
             ResourcePackManifest.Header header = resourcePack.getManifest().getHeader();
             resourcePacksInfo.getResourcePackInfos().add(new ResourcePacksInfoPacket.Entry(
-                    header.getUuid().toString(), header.getVersionString(), resourcePack.getFile().length(),
+                    header.getUuid().toString(), header.getVersionString(), resourcePack.getContentLength(),
                             "", "", "", false, false));
         }
         resourcePacksInfo.setForcedToAccept(GeyserConnector.getInstance().getConfig().isForceResourcePacks());
@@ -105,14 +108,14 @@ public class UpstreamPacketHandler extends LoggingPacketHandler {
                 for(String id : packet.getPackIds()) {
                     ResourcePackDataInfoPacket data = new ResourcePackDataInfoPacket();
                     String[] packID = id.split("_");
-                    ResourcePack pack = ResourcePack.PACKS.get(packID[0]);
+                    BedrockResourcePack pack = Registries.RESOURCE_PACKS.get().get(packID[0]);
                     ResourcePackManifest.Header header = pack.getManifest().getHeader();
 
                     data.setPackId(header.getUuid());
-                    int chunkCount = (int) Math.ceil((int) pack.getFile().length() / (double) ResourcePack.CHUNK_SIZE);
+                    int chunkCount = (int) Math.ceil((int) pack.getContentLength() / (double) BedrockResourcePack.CHUNK_SIZE);
                     data.setChunkCount(chunkCount);
-                    data.setCompressedPackSize(pack.getFile().length());
-                    data.setMaxChunkSize(ResourcePack.CHUNK_SIZE);
+                    data.setCompressedPackSize(pack.getContentLength());
+                    data.setMaxChunkSize(BedrockResourcePack.CHUNK_SIZE);
                     data.setHash(pack.getSha256());
                     data.setPackVersion(packID[1]);
                     data.setPremium(false);
@@ -128,7 +131,7 @@ public class UpstreamPacketHandler extends LoggingPacketHandler {
                 stackPacket.setForcedToAccept(false); // Leaving this as false allows the player to choose to download or not
                 stackPacket.setGameVersion(session.getClientData().getGameVersion());
 
-                for (ResourcePack pack : ResourcePack.PACKS.values()) {
+                for (BedrockResourcePack pack : Registries.RESOURCE_PACKS.get().values()) {
                     ResourcePackManifest.Header header = pack.getManifest().getHeader();
                     stackPacket.getResourcePacks().add(new ResourcePackStackPacket.Entry(header.getUuid().toString(), header.getVersionString(), ""));
                 }
@@ -217,17 +220,17 @@ public class UpstreamPacketHandler extends LoggingPacketHandler {
     @Override
     public boolean handle(ResourcePackChunkRequestPacket packet) {
         ResourcePackChunkDataPacket data = new ResourcePackChunkDataPacket();
-        ResourcePack pack = ResourcePack.PACKS.get(packet.getPackId().toString());
+        BedrockResourcePack pack = Registries.RESOURCE_PACKS.get().get(packet.getPackId().toString());
 
         data.setChunkIndex(packet.getChunkIndex());
-        data.setProgress(packet.getChunkIndex() * ResourcePack.CHUNK_SIZE);
+        data.setProgress(packet.getChunkIndex() * BedrockResourcePack.CHUNK_SIZE);
         data.setPackVersion(packet.getPackVersion());
         data.setPackId(packet.getPackId());
 
-        int offset = packet.getChunkIndex() * ResourcePack.CHUNK_SIZE;
-        byte[] packData = new byte[(int) MathUtils.constrain(pack.getFile().length() - offset, 0, ResourcePack.CHUNK_SIZE)];
+        int offset = packet.getChunkIndex() * BedrockResourcePack.CHUNK_SIZE;
+        byte[] packData = new byte[(int) MathUtils.constrain(pack.getContentLength() - offset, 0, BedrockResourcePack.CHUNK_SIZE)];
 
-        try (InputStream inputStream = new FileInputStream(pack.getFile())) {
+        try (InputStream inputStream = pack.getInputStream()) {
             inputStream.skip(offset);
             inputStream.read(packData, 0, packData.length);
         } catch (Exception e) {

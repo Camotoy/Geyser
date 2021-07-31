@@ -39,6 +39,8 @@ import org.geysermc.connector.common.serializer.AsteriskSerializer;
 import org.geysermc.connector.configuration.GeyserConfiguration;
 import org.geysermc.connector.network.BedrockProtocol;
 import org.geysermc.connector.network.session.GeyserSession;
+import org.geysermc.connector.pack.resourcepack.BedrockResourcePack;
+import org.geysermc.connector.registry.Registries;
 import org.geysermc.connector.utils.DockerCheck;
 import org.geysermc.connector.utils.FileUtils;
 import org.geysermc.floodgate.util.DeviceOs;
@@ -50,6 +52,8 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 @Getter
@@ -64,6 +68,7 @@ public class DumpInfo {
     private final Object2IntMap<DeviceOs> userPlatforms;
     private final HashInfo hashInfo;
     private final RamInfo ramInfo;
+    private final List<ResourcePackInfo> resourcePacks;
     private final BootstrapDumpInfo bootstrapInfo;
 
     public DumpInfo() {
@@ -98,6 +103,11 @@ public class DumpInfo {
         this.hashInfo = new HashInfo(md5Hash, sha256Hash);
 
         this.ramInfo = new DumpInfo.RamInfo();
+
+        this.resourcePacks = new ArrayList<>();
+        for (BedrockResourcePack resourcePack : Registries.RESOURCE_PACKS.get().values()) {
+            this.resourcePacks.add(new ResourcePackInfo(resourcePack.getManifest().getHeader().getName(), resourcePack.getManifest().getHeader().getVersionString()));
+        }
 
         this.userPlatforms = new Object2IntOpenHashMap<>();
         for (GeyserSession session : GeyserConnector.getInstance().getPlayers()) {
@@ -206,5 +216,12 @@ public class DumpInfo {
             this.total = Runtime.getRuntime().totalMemory() / MEGABYTE;
             this.max = Runtime.getRuntime().maxMemory() / MEGABYTE;
         }
+    }
+
+    @Getter
+    @AllArgsConstructor
+    public static class ResourcePackInfo {
+        private final String name;
+        private final String version;
     }
 }

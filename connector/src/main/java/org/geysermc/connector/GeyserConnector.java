@@ -44,12 +44,12 @@ import org.geysermc.connector.configuration.GeyserConfiguration;
 import org.geysermc.connector.metrics.Metrics;
 import org.geysermc.connector.network.ConnectorServerEventHandler;
 import org.geysermc.connector.network.session.GeyserSession;
-import org.geysermc.connector.registry.BlockRegistries;
-import org.geysermc.connector.registry.Registries;
 import org.geysermc.connector.network.translators.PacketTranslatorRegistry;
 import org.geysermc.connector.network.translators.item.ItemTranslator;
 import org.geysermc.connector.network.translators.world.WorldManager;
 import org.geysermc.connector.network.translators.world.block.entity.SkullBlockEntityTranslator;
+import org.geysermc.connector.registry.BlockRegistries;
+import org.geysermc.connector.registry.Registries;
 import org.geysermc.connector.skin.FloodgateSkinUploader;
 import org.geysermc.connector.utils.*;
 import org.geysermc.floodgate.crypto.AesCipher;
@@ -151,8 +151,6 @@ public class GeyserConnector {
 
         ItemTranslator.init();
         LocaleUtils.init();
-
-        ResourcePack.loadPacks();
 
         if (platformType != PlatformType.STANDALONE && config.getRemote().getAddress().equals("auto")) {
             // Set the remote address to localhost since that is where we are always connecting

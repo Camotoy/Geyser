@@ -25,16 +25,22 @@
 
 package org.geysermc.connector.bootstrap;
 
-import org.geysermc.connector.dump.BootstrapDumpInfo;
-import org.geysermc.connector.ping.IGeyserPingPassthrough;
-import org.geysermc.connector.configuration.GeyserConfiguration;
+import org.geysermc.connector.GeyserConnector;
 import org.geysermc.connector.GeyserLogger;
 import org.geysermc.connector.command.CommandManager;
+import org.geysermc.connector.configuration.GeyserConfiguration;
+import org.geysermc.connector.dump.BootstrapDumpInfo;
 import org.geysermc.connector.network.translators.world.GeyserWorldManager;
 import org.geysermc.connector.network.translators.world.WorldManager;
+import org.geysermc.connector.ping.IGeyserPingPassthrough;
 
 import javax.annotation.Nullable;
+import java.io.File;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
 
 public interface GeyserBootstrap {
 
@@ -113,5 +119,23 @@ public interface GeyserBootstrap {
     @Nullable
     default String getMinecraftServerVersion() {
         return null;
+    }
+
+    /**
+     * This method should be overridden on integrated platforms that have access to the datapacks on a server
+     * (however, calling super should still be done so packs can manually be added).
+     *
+     * @return a mutable list of datapacks to possibly generate biome information off of.
+     */
+    default List<File> findDatapacks() {
+        File geyserDatapacks = GeyserConnector.getInstance().getBootstrap().getConfigFolder().resolve("datapacks").toFile();
+        if (!geyserDatapacks.exists()) {
+            //noinspection ResultOfMethodCallIgnored
+            geyserDatapacks.mkdir();
+            // No datapacks to load from a freshly created folder.
+            return new ArrayList<>();
+        }
+
+        return Arrays.asList(Objects.requireNonNull(geyserDatapacks.listFiles()));
     }
 }
