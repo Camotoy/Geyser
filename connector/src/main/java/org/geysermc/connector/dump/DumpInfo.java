@@ -106,7 +106,8 @@ public class DumpInfo {
 
         this.resourcePacks = new ArrayList<>();
         for (BedrockResourcePack resourcePack : Registries.RESOURCE_PACKS.get().values()) {
-            this.resourcePacks.add(new ResourcePackInfo(resourcePack.getManifest().getHeader().getName(), resourcePack.getManifest().getHeader().getVersionString()));
+            this.resourcePacks.add(new ResourcePackInfo(resourcePack.getManifest().getHeader().getName(),
+                    resourcePack.getManifest().getHeader().getDescription(), resourcePack.getManifest().getHeader().getVersionString()));
         }
 
         this.userPlatforms = new Object2IntOpenHashMap<>();
@@ -222,6 +223,7 @@ public class DumpInfo {
     @AllArgsConstructor
     public static class ResourcePackInfo {
         private final String name;
+        private final String description;
         private final String version;
     }
 }
