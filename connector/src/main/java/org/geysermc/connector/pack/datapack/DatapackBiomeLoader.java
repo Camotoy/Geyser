@@ -50,13 +50,19 @@ public class DatapackBiomeLoader {
             throw new FileNotFoundException("Could not find the datapack file!");
         }
 
+        boolean isDirectory = file.isDirectory();
+
         Map<String, BedrockFogDefinition> fogDefinitions = new HashMap<>();
         BedrockClientBiomes clientBiomes = new BedrockClientBiomes();
         List<BedrockServerBiome> serverBiomes = new ArrayList<>();
 
-        try (FileSystem fileSystem = FileSystems.newFileSystem(file.toPath(), DatapackBiomeLoader.class.getClassLoader())) {
-            Files.walk(fileSystem.getPath("data"), 1).forEach((dataPath -> {
-                if (dataPath.getParent() == null) {
+        // Not closeable if a directory
+        FileSystem fileSystem = isDirectory ? file.toPath().getFileSystem() : FileSystems.newFileSystem(file.toPath(), DatapackBiomeLoader.class.getClassLoader());
+
+        try {
+            // We need to use things like Files.walk as zipped datapacks cannot use Path#toFile.
+            Files.walk(isDirectory ? file.toPath() : fileSystem.getPath("data"), 1).forEach((dataPath -> {
+                if ((isDirectory && dataPath.getParent().equals(file.toPath())) || (!isDirectory && dataPath.getParent() == null)) {
                     // The "data" path alone shows up here
                     return;
                 }
@@ -72,12 +78,13 @@ public class DatapackBiomeLoader {
                     if (!Files.exists(worldgenPath)) {
                         return;
                     }
-                    Files.walk(worldgenPath, 1).forEach(biomePath -> {
+                    Files.walk(worldgenPath).forEach(biomePath -> {
                         if (Files.isDirectory(biomePath) || !biomePath.toString().toLowerCase(Locale.ROOT).endsWith(".json")) {
                             return;
                         }
 
-                        String fileName = biomePath.getFileName().toString();
+                        // This matches the Java identifier by removing the preceding worldgen/biome folders but still keeping a folder structure if present
+                        String fileName = worldgenPath.relativize(biomePath).toString();
                         String biomeName = fileName.substring(0, fileName.length() - ".json".length());
                         Key key = Key.key(namespace, biomeName);
 
@@ -93,10 +100,49 @@ public class DatapackBiomeLoader {
                         String waterColor = hexColorToString(datapackBiome.getEffects().getWaterColor());
                         String waterFogColor = hexColorToString(datapackBiome.getEffects().getWaterFogColor());
 
+                        // Java supports any particle floating around, but Bedrock only supports a handful.
+                        // If the particle in this biome happens to be one of the supported, let's enable it
+                        float ash = 0f;
+                        float blueSpores = 0f;
+                        float redSpores = 0f;
+                        float whiteAsh = 0f;
+
+                        if (datapackBiome.getEffects().getParticle() != null && datapackBiome.getEffects().getParticle().getOptions() != null
+                                && datapackBiome.getEffects().getParticle().getOptions().getType() != null) {
+                            // Probability is based on Java's crimson spore count being 0.025 and Bedrock's being 0.25
+                            switch (datapackBiome.getEffects().getParticle().getOptions().getType()) {
+                                case "minecraft:ash":
+                                    ash = datapackBiome.getEffects().getParticle().getProbability() * 10;
+                                    break;
+                                case "minecraft:crimson_spore":
+                                    redSpores = datapackBiome.getEffects().getParticle().getProbability() * 10;
+                                    break;
+                                case "minecraft:warped_spore":
+                                    blueSpores = datapackBiome.getEffects().getParticle().getProbability() * 10;
+                                    break;
+                                case "minecraft:white_ash":
+                                    whiteAsh = datapackBiome.getEffects().getParticle().getProbability() * 10;
+                                    break;
+                            }
+                        }
+
                         Map<String, BedrockFogDefinition.FogSettings.FogDistance> fogs = new HashMap<>();
                         if (fogColor != null) {
-                            fogs.put("air", new BedrockFogDefinition.FogSettings.FogDistance(10.0f, 96.0f, fogColor, "fixed"));
-                            fogs.put("weather", new BedrockFogDefinition.FogSettings.FogDistance(10.0f, 96.0f, fogColor, "fixed"));
+                            float fogStart;
+                            float fogEnd;
+                            String type;
+                            if (datapackBiome.getCategory().equals("nether")) {
+                                fogStart = 10.0f;
+                                fogEnd = 96.0f;
+                                type = "fixed";
+                            } else {
+                                fogStart = 1f;
+                                fogEnd = 1f;
+                                type = "render";
+                            }
+
+                            fogs.put("air", new BedrockFogDefinition.FogSettings.FogDistance(fogStart, fogEnd, fogColor, type));
+                            fogs.put("weather", new BedrockFogDefinition.FogSettings.FogDistance(fogStart, fogEnd, fogColor, type));
                         }
                         if (waterFogColor != null) {
                             fogs.put("water", new BedrockFogDefinition.FogSettings.FogDistance(0.0f, 15.0f, waterFogColor, "fixed"));
@@ -108,12 +154,17 @@ public class DatapackBiomeLoader {
                         BedrockClientBiome clientBiome = new BedrockClientBiome(fogDefinition.getFogSettings().getIdentifier().asString(), waterColor);
                         clientBiomes.getBiomes().put(key.asString(), clientBiome);
 
-                        serverBiomes.add(new BedrockServerBiome(key.asString(), datapackBiome.getTemperature()));
+                        serverBiomes.add(new BedrockServerBiome(key.asString(), ash, blueSpores,
+                                datapackBiome.getDownfall(), redSpores, datapackBiome.getTemperature(), whiteAsh));
                     });
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             }));
+        } finally {
+            if (!isDirectory) {
+                fileSystem.close();
+            }
         }
 
         if (serverBiomes.isEmpty()) {
@@ -158,6 +209,8 @@ public class DatapackBiomeLoader {
                 ResourcePackManifest.Version.fromArray(manifest.getHeader().getVersion()));
 
         Registries.RESOURCE_PACKS.get().put(manifest.getHeader().getUuid().toString(), resourcePack);
+
+        GeyserConnector.getInstance().getLogger().debug("Registered virtual resource pack from datapack: " + manifest.getHeader().getName());
     }
 
     private static String hexColorToString(Integer color) {

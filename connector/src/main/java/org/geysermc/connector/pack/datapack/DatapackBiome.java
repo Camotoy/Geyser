@@ -36,8 +36,8 @@ import lombok.ToString;
 public class DatapackBiome {
     private Effects effects;
     private String precipitation;
-    private int temperature;
-    private int downfall;
+    private float temperature;
+    private float downfall;
     private String category;
     private int depth;
     private float scale;
@@ -50,9 +50,34 @@ public class DatapackBiome {
         private Integer skyColor;
         @JsonProperty("fog_color")
         private Integer fogColor;
+        @JsonProperty("foliage_color")
+        private Integer foliageColor;
+        @JsonProperty("grass_color") // Can't be used at the moment - no property to match it to
+        private Integer grassColor;
         @JsonProperty("water_color")
         private Integer waterColor;
         @JsonProperty("water_fog_color")
         private Integer waterFogColor;
+        private Particle particle;
+
+        @Getter
+        @JsonIgnoreProperties(ignoreUnknown = true)
+        @ToString
+        public static class Particle {
+            private Options options;
+            private float probability;
+
+            @Getter
+            @JsonIgnoreProperties(ignoreUnknown = true)
+            @ToString
+            public static class Options {
+                private String type;
+                // The following four are present in dust particles
+                private Float r;
+                private Float g;
+                private Float b;
+                private Integer scale;
+            }
+        }
     }
 }

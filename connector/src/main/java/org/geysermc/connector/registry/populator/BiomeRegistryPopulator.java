@@ -167,5 +167,7 @@ public class BiomeRegistryPopulator {
         root.putCompound(bedrockBiome.getName(), nbt);
 
         Registries.BIOME_IDENTIFIERS.get().put(bedrockBiome.getName(), bedrockId);
+
+        GeyserConnector.getInstance().getLogger().debug("Registered custom biome: " + bedrockBiome.getName());
     }
 }

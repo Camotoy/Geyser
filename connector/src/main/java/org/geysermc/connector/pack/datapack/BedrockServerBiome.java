@@ -28,6 +28,7 @@ package org.geysermc.connector.pack.datapack;
 import com.nukkitx.nbt.NbtMap;
 import com.nukkitx.nbt.NbtMapBuilder;
 import com.nukkitx.nbt.NbtType;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -37,6 +38,7 @@ import javax.annotation.Nonnull;
  * Represents the server definition of the biome sent to the client
  */
 @Getter // For serialization
+@AllArgsConstructor
 @NoArgsConstructor // For deserialization
 public class BedrockServerBiome implements Comparable<BedrockServerBiome> {
     private String name;
@@ -46,11 +48,6 @@ public class BedrockServerBiome implements Comparable<BedrockServerBiome> {
     private float redSpores;
     private float temperature;
     private float whiteAsh;
-
-    public BedrockServerBiome(String name, float temperature) {
-        this.name = name;
-        this.temperature = temperature;
-    }
 
     public NbtMap toNbt() {
         NbtMapBuilder builder = NbtMap.builder()

@@ -56,8 +56,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.file.Path;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.logging.Level;
 
 public class GeyserSpigotPlugin extends JavaPlugin implements GeyserBootstrap {
@@ -288,6 +287,29 @@ public class GeyserSpigotPlugin extends JavaPlugin implements GeyserBootstrap {
     @Override
     public SocketAddress getSocketAddress() {
         return this.geyserInjector.getServerSocketAddress();
+    }
+
+    @Override
+    public List<File> findDatapacks() {
+        List<File> cachedDatapacks = GeyserBootstrap.super.findDatapacks();
+
+        try {
+            File serverDatapacks = Bukkit.getWorlds().get(0).getWorldFolder().toPath().resolve("datapacks").toFile();
+            if (!serverDatapacks.exists()) {
+                return cachedDatapacks;
+            }
+
+            List<File> datapacks = new ArrayList<>(cachedDatapacks);
+            Collections.addAll(datapacks, serverDatapacks.listFiles());
+
+            return datapacks;
+        } catch (Exception e) {
+            if (geyserConfig.isDebugMode()) {
+                e.printStackTrace();
+            }
+
+            return cachedDatapacks;
+        }
     }
 
     public boolean isCompatible(String version, String whichVersion) {
