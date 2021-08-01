@@ -36,6 +36,7 @@ import org.geysermc.connector.ping.IGeyserPingPassthrough;
 
 import javax.annotation.Nullable;
 import java.io.File;
+import java.net.SocketAddress;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -118,6 +119,11 @@ public interface GeyserBootstrap {
      */
     @Nullable
     default String getMinecraftServerVersion() {
+        return null;
+    }
+
+    @Nullable
+    default SocketAddress getSocketAddress() {
         return null;
     }
 
