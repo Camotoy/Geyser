@@ -44,6 +44,7 @@ import com.github.steveice10.mc.protocol.packet.ingame.client.player.ClientPlaye
 import com.github.steveice10.mc.protocol.packet.ingame.client.player.ClientPlayerPositionRotationPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.client.world.ClientTeleportConfirmPacket;
 import com.github.steveice10.mc.protocol.packet.login.client.LoginPluginResponsePacket;
+import com.github.steveice10.mc.protocol.packet.login.server.LoginSetCompressionPacket;
 import com.github.steveice10.packetlib.BuiltinFlags;
 import com.github.steveice10.packetlib.event.session.*;
 import com.github.steveice10.packetlib.packet.Packet;
@@ -856,7 +857,7 @@ public class GeyserSession implements CommandSender {
                 // If native compression is enabled, then this line is tripped up if a heap buffer is sent over in such a situation
                 // as a new direct buffer is not created with that patch (HeapByteBufs throw an UnsupportedOperationException here):
                 // https://github.com/SpigotMC/BungeeCord/blob/a283aaf724d4c9a815540cd32f3aafaa72df9e05/native/src/main/java/net/md_5/bungee/jni/zlib/NativeZlib.java#L43
-                // This issue could be mitigated down the line by preventing Bungee from setting compression
+                // If disable compression is enabled, this can probably be disabled now, but BungeeCord (not Waterfall) complains
                 downstream.setFlag(BuiltinFlags.USE_ONLY_DIRECT_BUFFERS, connector.getPlatformType() == PlatformType.BUNGEECORD);
 
                 downstream.connectInternal(connector.getBootstrap().getSocketAddress(), upstream.getAddress().getAddress().getHostAddress());

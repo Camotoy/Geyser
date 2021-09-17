@@ -103,7 +103,7 @@ public class GeyserBungeeInjector extends GeyserInjector {
 
         ChannelFuture channelFuture = (new ServerBootstrap()
                 .channel(LocalServerChannelWrapper.class)
-                .childHandler(new ChannelInitializer<Channel>() {
+                .childHandler(new ChannelInitializer<>() {
                     @Override
                     protected void initChannel(Channel ch) throws Exception {
                         if (proxy.getConfig().getServers() == null) {
@@ -120,6 +120,11 @@ public class GeyserBungeeInjector extends GeyserInjector {
                             channelInitializer = PipelineUtils.SERVER_CHILD;
                         }
                         initChannel.invoke(channelInitializer, ch);
+
+                        if (bootstrap.getGeyserConfig().isDisableCompression()) {
+                            ch.pipeline().addAfter(PipelineUtils.PACKET_ENCODER, "geyser-compression-disabler",
+                                    new GeyserBungeeCompressionDisabler());
+                        }
                     }
                 })
                 .childAttr(listener, listenerInfo)
