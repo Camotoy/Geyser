@@ -25,7 +25,9 @@
 
 package org.geysermc.connector.network.translators.java.scoreboard;
 
+import com.github.steveice10.mc.protocol.data.game.scoreboard.NameTagVisibility;
 import com.github.steveice10.mc.protocol.data.game.scoreboard.TeamAction;
+import com.github.steveice10.mc.protocol.data.game.scoreboard.TeamColor;
 import com.github.steveice10.mc.protocol.packet.ingame.server.scoreboard.ServerTeamPacket;
 import org.geysermc.connector.GeyserConnector;
 import org.geysermc.connector.GeyserLogger;
@@ -60,21 +62,37 @@ public class JavaTeamTranslator extends PacketTranslator<ServerTeamPacket> {
         Scoreboard scoreboard = session.getWorldCache().getScoreboard();
         Team team = scoreboard.getTeam(packet.getTeamName());
         switch (packet.getAction()) {
-            case CREATE ->
-                    scoreboard.registerNewTeam(packet.getTeamName(), packet.getPlayers())
-                            .setName(MessageTranslator.convertMessage(packet.getDisplayName()))
-                            .setColor(packet.getColor())
-                            .setNameTagVisibility(packet.getNameTagVisibility())
-                            .setPrefix(MessageTranslator.convertMessage(packet.getPrefix(), session.getLocale()))
-                            .setSuffix(MessageTranslator.convertMessage(packet.getSuffix(), session.getLocale()));
+            case CREATE -> {
+                team = scoreboard.registerNewTeam(packet.getTeamName(), packet.getPlayers())
+                        .setName(MessageTranslator.convertMessage(packet.getDisplayName()))
+                        .setColor(packet.getColor())
+                        .setNameTagVisibility(packet.getNameTagVisibility())
+                        .setPrefix(MessageTranslator.convertMessage(packet.getPrefix(), session.getLocale()))
+                        .setSuffix(MessageTranslator.convertMessage(packet.getSuffix(), session.getLocale()));
+
+                if ((team.getNameTagVisibility() != NameTagVisibility.ALWAYS && !team.isVisibleFor(session.getPlayerEntity().getUsername()))
+                        || team.getColor() != TeamColor.NONE
+                        || !team.getCurrentData().getPrefix().isEmpty()
+                        || !team.getCurrentData().getSuffix().isEmpty()) {
+                    // Something is here that would modify entity names
+                    team.updateEntityNames(session);
+                }
+            }
             case UPDATE -> {
                 if (team == null) {
-                    logger.debug(LanguageUtils.getLocaleStringLog(
-                            "geyser.network.translator.team.failed_not_registered",
-                            packet.getAction(), packet.getTeamName()
-                    ));
+                    if (logger.isDebug()) {
+                        logger.debug(LanguageUtils.getLocaleStringLog(
+                                "geyser.network.translator.team.failed_not_registered",
+                                packet.getAction(), packet.getTeamName()
+                        ));
+                    }
                     return;
                 }
+
+                TeamColor oldColor = team.getColor();
+                NameTagVisibility oldVisibility = team.getNameTagVisibility();
+                String oldPrefix = team.getCurrentData().getPrefix();
+                String oldSuffix = team.getCurrentData().getSuffix();
 
                 team.setName(MessageTranslator.convertMessage(packet.getDisplayName()))
                         .setColor(packet.getColor())
@@ -82,28 +100,40 @@ public class JavaTeamTranslator extends PacketTranslator<ServerTeamPacket> {
                         .setPrefix(MessageTranslator.convertMessage(packet.getPrefix(), session.getLocale()))
                         .setSuffix(MessageTranslator.convertMessage(packet.getSuffix(), session.getLocale()))
                         .setUpdateType(UpdateType.UPDATE);
+
+                if (oldVisibility != team.getNameTagVisibility()
+                        || oldColor != team.getColor()
+                        || !oldPrefix.equals(team.getCurrentData().getPrefix())
+                        || !oldSuffix.equals(team.getCurrentData().getSuffix())) {
+                    // Update entities attached to this team as something about their nameplates have changed
+                    team.updateEntityNames(session);
+                }
             }
             case ADD_PLAYER -> {
                 if (team == null) {
-                    logger.debug(LanguageUtils.getLocaleStringLog(
-                            "geyser.network.translator.team.failed_not_registered",
-                            packet.getAction(), packet.getTeamName()
-                    ));
+                    if (logger.isDebug()) {
+                        logger.debug(LanguageUtils.getLocaleStringLog(
+                                "geyser.network.translator.team.failed_not_registered",
+                                packet.getAction(), packet.getTeamName()
+                        ));
+                    }
                     return;
                 }
-                team.addEntities(packet.getPlayers());
+                team.addEntities(session, packet.getPlayers());
             }
             case REMOVE_PLAYER -> {
                 if (team == null) {
-                    logger.debug(LanguageUtils.getLocaleStringLog(
-                            "geyser.network.translator.team.failed_not_registered",
-                            packet.getAction(), packet.getTeamName()
-                    ));
+                    if (logger.isDebug()) {
+                        logger.debug(LanguageUtils.getLocaleStringLog(
+                                "geyser.network.translator.team.failed_not_registered",
+                                packet.getAction(), packet.getTeamName()
+                        ));
+                    }
                     return;
                 }
-                team.removeEntities(packet.getPlayers());
+                team.removeEntities(session, packet.getPlayers());
             }
-            case REMOVE -> scoreboard.removeTeam(packet.getTeamName());
+            case REMOVE -> scoreboard.removeTeam(session, packet.getTeamName());
         }
 
         // ScoreboardUpdater will handle it for us if the packets per second

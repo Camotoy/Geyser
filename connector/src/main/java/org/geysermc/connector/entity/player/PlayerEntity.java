@@ -37,10 +37,8 @@ import com.nukkitx.protocol.bedrock.data.command.CommandPermission;
 import com.nukkitx.protocol.bedrock.data.entity.EntityData;
 import com.nukkitx.protocol.bedrock.data.entity.EntityFlag;
 import com.nukkitx.protocol.bedrock.data.entity.EntityLinkData;
-import com.nukkitx.protocol.bedrock.packet.AddPlayerPacket;
-import com.nukkitx.protocol.bedrock.packet.MovePlayerPacket;
-import com.nukkitx.protocol.bedrock.packet.SetEntityLinkPacket;
-import com.nukkitx.protocol.bedrock.packet.UpdateAttributesPacket;
+import com.nukkitx.protocol.bedrock.packet.*;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import net.kyori.adventure.text.Component;
@@ -52,6 +50,7 @@ import org.geysermc.connector.network.session.GeyserSession;
 import org.geysermc.connector.network.translators.chat.MessageTranslator;
 import org.geysermc.connector.scoreboard.Team;
 
+import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -62,6 +61,9 @@ public class PlayerEntity extends LivingEntity {
     private UUID uuid;
     private String username;
     private boolean playerList = true;  // Player is in the player list
+
+    @Getter(AccessLevel.NONE)
+    private String displayName;
 
     /**
      * Saves the parrot currently on the player's left shoulder; otherwise null
@@ -78,6 +80,7 @@ public class PlayerEntity extends LivingEntity {
         profile = gameProfile;
         uuid = gameProfile.getId();
         username = gameProfile.getName();
+        displayName = username;
 
         // For the OptionalPack, set all bits as invisible by default as this matches Java Edition behavior
         metadata.put(EntityData.MARK_VARIANT, 0xff);
@@ -233,23 +236,6 @@ public class PlayerEntity extends LivingEntity {
     public void updateBedrockMetadata(EntityMetadata entityMetadata, GeyserSession session) {
         super.updateBedrockMetadata(entityMetadata, session);
 
-        if (entityMetadata.getId() == 2) {
-            String username = this.username;
-            Component name = (Component) entityMetadata.getValue();
-            if (name != null) {
-                username = MessageTranslator.convertMessage(name);
-            }
-            Team team = session.getWorldCache().getScoreboard().getTeamFor(username);
-            if (team != null) {
-                String displayName = "";
-                if (team.isVisibleFor(session.getPlayerEntity().getUsername())) {
-                    displayName = MessageTranslator.toChatColor(team.getColor()) + username;
-                    displayName = team.getCurrentData().getDisplayName(displayName);
-                }
-                metadata.put(EntityData.NAMETAG, displayName);
-            }
-        }
-
         // Extra hearts - is not metadata but an attribute on Bedrock
         if (entityMetadata.getId() == 15) {
             UpdateAttributesPacket attributesPacket = new UpdateAttributesPacket();
@@ -309,6 +295,56 @@ public class PlayerEntity extends LivingEntity {
                     }
                 }
             }
+        }
+    }
+
+    @Override
+    protected String setDisplayName(GeyserSession session, Component name) {
+        String displayName = super.setDisplayName(session, name);
+        this.displayName = displayName != null ? displayName : username;
+        // Update if we know this player has a team
+        updateDisplayName(session, null, false);
+
+        return this.displayName;
+    }
+
+    //todo this will become common entity logic once UUID support is implemented for them
+    /**
+     * @param useGivenTeam even if there is no team, update the username in the entity metadata anyway, and don't look for a team
+     */
+    public void updateDisplayName(GeyserSession session, @Nullable Team team, boolean useGivenTeam) {
+        if (team == null && !useGivenTeam) {
+            // Only search for the team if we are not supposed to use the given team
+            // If the given team is null, this is intentional that we are being removed from the team
+            team = session.getWorldCache().getScoreboard().getTeamFor(username);
+        }
+
+        boolean needsUpdate;
+        String newDisplayName = this.displayName;
+        if (team != null) {
+            if (team.isVisibleFor(session.getPlayerEntity().getUsername())) {
+                String displayName = MessageTranslator.toChatColor(team.getColor()) + this.displayName;
+                newDisplayName = team.getCurrentData().getDisplayName(displayName);
+            } else {
+                // The name is not visible to the session player; clear name
+                newDisplayName = "";
+            }
+            needsUpdate = useGivenTeam && !newDisplayName.equals(metadata.getString(EntityData.NAMETAG, null));
+            metadata.put(EntityData.NAMETAG, newDisplayName);
+        } else if (useGivenTeam) {
+            // The name has reset, if it was previously something else
+            needsUpdate = !newDisplayName.equals(metadata.getString(EntityData.NAMETAG));
+            metadata.put(EntityData.NAMETAG, this.displayName);
+        } else {
+            needsUpdate = false;
+        }
+
+        if (needsUpdate) {
+            // Update the metadata as it won't be updated later
+            SetEntityDataPacket packet = new SetEntityDataPacket();
+            packet.getMetadata().put(EntityData.NAMETAG, newDisplayName);
+            packet.setRuntimeEntityId(geyserId);
+            session.sendUpstreamPacket(packet);
         }
     }
 

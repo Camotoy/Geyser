@@ -112,7 +112,7 @@ public final class Scoreboard {
             return team;
         }
 
-        team = new Team(this, teamName).addEntities(players);
+        team = new Team(this, teamName).addEntities(null, players);
         teams.put(teamName, team);
         return team;
     }
@@ -136,10 +136,11 @@ public final class Scoreboard {
         }
     }
 
-    public void removeTeam(String teamName) {
+    public void removeTeam(GeyserSession session, String teamName) {
         Team remove = teams.remove(teamName);
         if (remove != null) {
             remove.setUpdateType(REMOVE);
+            remove.removeEntityNames(session);
         }
     }
 
