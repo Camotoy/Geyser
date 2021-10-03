@@ -75,7 +75,7 @@ public class JavaTeamTranslator extends PacketTranslator<ServerTeamPacket> {
                         || !team.getCurrentData().getPrefix().isEmpty()
                         || !team.getCurrentData().getSuffix().isEmpty()) {
                     // Something is here that would modify entity names
-                    team.updateEntityNames(session);
+                    scoreboard.updateEntityNames(team, true);
                 }
             }
             case UPDATE -> {
@@ -106,7 +106,7 @@ public class JavaTeamTranslator extends PacketTranslator<ServerTeamPacket> {
                         || !oldPrefix.equals(team.getCurrentData().getPrefix())
                         || !oldSuffix.equals(team.getCurrentData().getSuffix())) {
                     // Update entities attached to this team as something about their nameplates have changed
-                    team.updateEntityNames(session);
+                    scoreboard.updateEntityNames(team, false);
                 }
             }
             case ADD_PLAYER -> {
@@ -119,7 +119,7 @@ public class JavaTeamTranslator extends PacketTranslator<ServerTeamPacket> {
                     }
                     return;
                 }
-                team.addEntities(session, packet.getPlayers());
+                team.addEntities(true, packet.getPlayers());
             }
             case REMOVE_PLAYER -> {
                 if (team == null) {
@@ -131,9 +131,9 @@ public class JavaTeamTranslator extends PacketTranslator<ServerTeamPacket> {
                     }
                     return;
                 }
-                team.removeEntities(session, packet.getPlayers());
+                team.removeEntities(packet.getPlayers());
             }
-            case REMOVE -> scoreboard.removeTeam(session, packet.getTeamName());
+            case REMOVE -> scoreboard.removeTeam(packet.getTeamName());
         }
 
         // ScoreboardUpdater will handle it for us if the packets per second

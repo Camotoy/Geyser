@@ -32,11 +32,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
-import org.geysermc.connector.entity.Entity;
-import org.geysermc.connector.entity.player.PlayerEntity;
-import org.geysermc.connector.network.session.GeyserSession;
 
-import javax.annotation.Nullable;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -46,7 +42,7 @@ public final class Team {
     private final Scoreboard scoreboard;
     private final String id;
 
-    @Getter(AccessLevel.NONE)
+    @Getter(AccessLevel.PACKAGE)
     private final Set<String> entities;
     @Setter private NameTagVisibility nameTagVisibility;
     @Setter private TeamColor color;
@@ -63,7 +59,7 @@ public final class Team {
         entities = new ObjectOpenHashSet<>();
     }
 
-    public Team addEntities(@Nullable GeyserSession session, String... names) {
+    public Team addEntities(boolean updateDisplayNames, String... names) {
         Set<String> added = new HashSet<>();
         for (String name : names) {
             if (entities.add(name)) {
@@ -85,28 +81,20 @@ public final class Team {
             }
         }
 
-        if (session != null) {
-            updateEntityNames(session, added);
+        if (updateDisplayNames) {
+            scoreboard.updateEntityNames(this, added, true);
         }
         return this;
     }
 
-    public void removeEntities(GeyserSession session, String... names) {
+    public void removeEntities(String... names) {
+        Set<String> removed = new HashSet<>();
         for (String name : names) {
             if (entities.remove(name)) {
-                if (name.equals(session.getPlayerEntity().getUsername())) {
-                    refreshSessionPlayerDisplays(session);
-                } else {
-                    for (Entity entity : session.getEntityCache().getEntities().values()) {
-                        // This more complex logic is for the future to iterate over all entities, not just players
-                        if (entity instanceof PlayerEntity player && name.equals(player.getUsername())) {
-                            player.updateDisplayName(session, null, true);
-                            break;
-                        }
-                    }
-                }
+                removed.add(name);
             }
         }
+        scoreboard.updateEntityNames(null, removed, true);
     }
 
     public boolean hasEntity(String name) {
@@ -138,57 +126,6 @@ public final class Team {
         }
         currentData.suffix = suffix;
         return this;
-    }
-
-    public Team updateEntityNames(GeyserSession session) {
-        Set<String> names = new HashSet<>(this.entities);
-        return updateEntityNames(session, names);
-    }
-
-    private Team updateEntityNames(GeyserSession session, Set<String> names) {
-        if (names.remove(session.getPlayerEntity().getUsername())) {
-            refreshSessionPlayerDisplays(session);
-        }
-        if (!names.isEmpty()) {
-            for (Entity entity : session.getEntityCache().getEntities().values()) {
-                // This more complex logic is for the future to iterate over all entities, not just players
-                if (entity instanceof PlayerEntity player && names.remove(player.getUsername())) {
-                    player.updateDisplayName(session, this, true);
-                    if (names.isEmpty()) {
-                        break;
-                    }
-                }
-            }
-        }
-        return this;
-    }
-
-    public void removeEntityNames(GeyserSession session) {
-        // We need to use the direct entities list here, so #refreshSessionPlayerDisplays also updates accordingly
-        if (entities.remove(session.getPlayerEntity().getUsername())) {
-            refreshSessionPlayerDisplays(session);
-        }
-        if (!entities.isEmpty()) {
-            for (Entity entity : session.getEntityCache().getEntities().values()) {
-                if (entity instanceof PlayerEntity player && entities.remove(player.getUsername())) {
-                    player.updateDisplayName(session, null, true);
-                    if (entities.isEmpty()) {
-                        break;
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * If the team's player was refreshed, then we need to go through every entity and check...
-     */
-    private void refreshSessionPlayerDisplays(GeyserSession session) {
-        for (Entity entity : session.getEntityCache().getEntities().values()) {
-            if (entity instanceof PlayerEntity player) {
-                player.updateDisplayName(session, null, false);
-            }
-        }
     }
 
     public String getDisplayName(String score) {
@@ -242,7 +179,11 @@ public final class Team {
 
     public boolean isVisibleFor(String entity) {
         return switch (nameTagVisibility) {
-            case HIDE_FOR_OTHER_TEAMS -> hasEntity(entity);
+            case HIDE_FOR_OTHER_TEAMS -> {
+                // Player must be in a team in order for HIDE_FOR_OTHER_TEAMS to be triggered
+                Team team = scoreboard.getTeamFor(entity);
+                yield team == null || team == this;
+            }
             case HIDE_FOR_OWN_TEAM -> !hasEntity(entity);
             case ALWAYS -> true;
             case NEVER -> false;

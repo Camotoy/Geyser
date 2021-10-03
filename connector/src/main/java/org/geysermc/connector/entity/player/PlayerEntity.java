@@ -333,8 +333,8 @@ public class PlayerEntity extends LivingEntity {
         String newDisplayName = this.displayName;
         if (team != null) {
             if (team.isVisibleFor(session.getPlayerEntity().getUsername())) {
-                String displayName = MessageTranslator.toChatColor(team.getColor()) + this.displayName;
-                newDisplayName = team.getCurrentData().getDisplayName(displayName);
+                String displayName = team.getCurrentData().getDisplayName(this.displayName);
+                newDisplayName = MessageTranslator.toChatColor(team.getColor()) + displayName;
             } else {
                 // The name is not visible to the session player; clear name
                 newDisplayName = "";
