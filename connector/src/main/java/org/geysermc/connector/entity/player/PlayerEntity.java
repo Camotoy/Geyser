@@ -28,6 +28,7 @@ package org.geysermc.connector.entity.player;
 import com.github.steveice10.mc.auth.data.GameProfile;
 import com.github.steveice10.mc.protocol.data.game.entity.metadata.EntityMetadata;
 import com.github.steveice10.mc.protocol.data.game.entity.metadata.Pose;
+import com.github.steveice10.mc.protocol.data.game.scoreboard.ScoreboardPosition;
 import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
 import com.nukkitx.math.vector.Vector3f;
 import com.nukkitx.math.vector.Vector3i;
@@ -48,7 +49,10 @@ import org.geysermc.connector.entity.living.animal.tameable.ParrotEntity;
 import org.geysermc.connector.entity.type.EntityType;
 import org.geysermc.connector.network.session.GeyserSession;
 import org.geysermc.connector.network.translators.chat.MessageTranslator;
+import org.geysermc.connector.scoreboard.Objective;
+import org.geysermc.connector.scoreboard.Score;
 import org.geysermc.connector.scoreboard.Team;
+import org.geysermc.connector.scoreboard.UpdateType;
 
 import javax.annotation.Nullable;
 import java.util.Collections;
@@ -88,6 +92,12 @@ public class PlayerEntity extends LivingEntity {
 
     @Override
     public void spawnEntity(GeyserSession session) {
+        // Check to see if the player should have a belowname counterpart added
+        Objective objective = session.getWorldCache().getScoreboard().getObjectiveSlots().get(ScoreboardPosition.BELOW_NAME);
+        if (objective != null) {
+            setBelowNameText(session, objective);
+        }
+
         AddPlayerPacket addPlayerPacket = new AddPlayerPacket();
         addPlayerPacket.setUuid(uuid);
         addPlayerPacket.setUsername(username);
@@ -361,5 +371,37 @@ public class PlayerEntity extends LivingEntity {
         }
         metadata.put(EntityData.BOUNDING_BOX_WIDTH, entityType.getWidth());
         metadata.put(EntityData.BOUNDING_BOX_HEIGHT, height);
+    }
+
+    public void setBelowNameText(GeyserSession session, Objective objective) {
+        if (objective != null && objective.getUpdateType() != UpdateType.REMOVE) {
+            int amount;
+            Score score = objective.getScores().get(username);
+            if (score != null) {
+                amount = score.getCurrentData().getScore();
+            } else {
+                amount = 0;
+            }
+            String displayString = amount + " " + objective.getDisplayName();
+
+            metadata.put(EntityData.SCORE_TAG, displayString);
+            if (valid) {
+                // Already spawned - we still need to run the rest of this code because the spawn packet will be
+                // providing the information
+                SetEntityDataPacket packet = new SetEntityDataPacket();
+                packet.setRuntimeEntityId(geyserId);
+                packet.getMetadata().put(EntityData.SCORE_TAG, displayString);
+                session.sendUpstreamPacket(packet);
+            }
+        } else {
+            // Always remove the score tag first, then check for valid.
+            // That way the score tag is removed if the player was spawned, then despawned, and is being respawned
+            if (metadata.remove(EntityData.SCORE_TAG) != null && valid) {
+                SetEntityDataPacket packet = new SetEntityDataPacket();
+                packet.setRuntimeEntityId(geyserId);
+                packet.getMetadata().put(EntityData.SCORE_TAG, "");
+                session.sendUpstreamPacket(packet);
+            }
+        }
     }
 }
