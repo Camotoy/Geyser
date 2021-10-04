@@ -52,6 +52,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 
+import static org.geysermc.connector.utils.InventoryUtils.BOOK_CLONING_RECIPE_ID;
 import static org.geysermc.connector.utils.InventoryUtils.LAST_RECIPE_NET_ID;
 
 /**
@@ -77,7 +78,7 @@ public class RecipeRegistryPopulator {
             Int2ObjectMap<Recipe> recipes = new Int2ObjectOpenHashMap<>();
 
             craftingData.put(RecipeType.CRAFTING_SPECIAL_BOOKCLONING,
-                    Collections.singletonList(CraftingData.fromMulti(UUID.fromString("d1ca6b84-338e-4f2f-9c6b-76cc8b4bd98d"), ++LAST_RECIPE_NET_ID)));
+                    Collections.singletonList(CraftingData.fromMulti(UUID.fromString("d1ca6b84-338e-4f2f-9c6b-76cc8b4bd98d"), BOOK_CLONING_RECIPE_ID = ++LAST_RECIPE_NET_ID)));
             craftingData.put(RecipeType.CRAFTING_SPECIAL_REPAIRITEM,
                     Collections.singletonList(CraftingData.fromMulti(UUID.fromString("00000000-0000-0000-0000-000000000001"), ++LAST_RECIPE_NET_ID)));
             craftingData.put(RecipeType.CRAFTING_SPECIAL_MAPEXTENDING,

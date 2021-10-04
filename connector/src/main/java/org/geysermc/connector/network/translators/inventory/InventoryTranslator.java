@@ -421,6 +421,12 @@ public abstract class InventoryTranslator {
                         return rejectRequest(request);
                     }
                     craftState = CraftState.RECIPE_ID;
+
+                    if (((CraftRecipeStackRequestActionData) action).getRecipeNetworkId() == InventoryUtils.BOOK_CLONING_RECIPE_ID) {
+                        // Book copying needs to be handled differently
+                        // There's a leftover item
+                        return translateBookCopyCraftingRequest(session, inventory, request);
+                    }
                     break;
                 }
                 case CRAFT_RESULTS_DEPRECATED: {
@@ -504,6 +510,88 @@ public abstract class InventoryTranslator {
                     return rejectRequest(request);
             }
         }
+        plan.execute(false);
+        return acceptRequest(request, makeContainerEntries(session, inventory, plan.getAffectedSlots()));
+    }
+
+    /**
+     * Book copying is unique in that there is an item remaining in the crafting table when done.
+     */
+    public ItemStackResponsePacket.Response translateBookCopyCraftingRequest(GeyserSession session, Inventory inventory, ItemStackRequest request) {
+        CraftState craftState = CraftState.START;
+        boolean newBookHandled = false;
+
+        ClickPlan plan = new ClickPlan(session, this, inventory, true);
+        for (StackRequestActionData action : request.getActions()) {
+            switch (action.getType()) {
+                case CRAFT_RECIPE -> {
+                    if (craftState != CraftState.START) {
+                        return rejectRequest(request);
+                    }
+                    craftState = CraftState.RECIPE_ID;
+                }
+                case CRAFT_RESULTS_DEPRECATED -> {
+                    CraftResultsDeprecatedStackRequestActionData deprecatedCraftAction = (CraftResultsDeprecatedStackRequestActionData) action;
+                    if (craftState != CraftState.RECIPE_ID) {
+                        return rejectRequest(request);
+                    }
+                    craftState = CraftState.DEPRECATED;
+
+                    if (deprecatedCraftAction.getResultItems().length != 2) {
+                        // Crafted item and old book
+                        return rejectRequest(request);
+                    }
+                    int resultSize = deprecatedCraftAction.getResultItems()[0].getCount();
+                    int timesCrafted = deprecatedCraftAction.getTimesCrafted();
+                    if (resultSize != 1 || timesCrafted != 1) {
+                        return rejectRequest(request);
+                    }
+                }
+                case CONSUME -> {
+                    // Ignore I guess
+                }
+                case CREATE -> {
+                    // After the proper book is created this is called
+                }
+                case TAKE, PLACE -> {
+                    TransferStackRequestActionData transferAction = (TransferStackRequestActionData) action;
+                    if (craftState != CraftState.DEPRECATED) {
+                        return rejectRequest(request);
+                    }
+
+                    if (newBookHandled) {
+                        // Don't let this execute for the old book and keep it in its old slot
+                        // Bedrock wants to move it to the inventory; don't let it
+                        continue;
+                    }
+
+                    if (transferAction.getSource().getContainer() != ContainerSlotType.CREATIVE_OUTPUT) {
+                        return rejectRequest(request);
+                    }
+                    if (transferAction.getCount() != 1) {
+                        return rejectRequest(request);
+                    }
+
+                    int sourceSlot = bedrockSlotToJava(transferAction.getSource());
+                    int destSlot = bedrockSlotToJava(transferAction.getDestination());
+
+                    // Books are pretty simple in this regard - we'll yeet the written book when we execute
+                    // the click plan, but otherwise a book isn't stackable so there aren't many options for it
+                    if (isCursor(transferAction.getDestination())) {
+                        plan.add(Click.LEFT, sourceSlot);
+                    } else {
+                        plan.add(Click.LEFT, sourceSlot);
+                        plan.add(Click.LEFT, destSlot);
+                    }
+
+                    newBookHandled = true;
+                }
+                default -> {
+                    return rejectRequest(request);
+                }
+            }
+        }
+
         plan.execute(false);
         return acceptRequest(request, makeContainerEntries(session, inventory, plan.getAffectedSlots()));
     }

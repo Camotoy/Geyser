@@ -51,6 +51,7 @@ public class StoredItemMappings {
     private final ItemMapping shield;
     private final ItemMapping wheat;
     private final ItemMapping writableBook;
+    private final ItemMapping writtenBook;
 
     public StoredItemMappings(Map<String, ItemMapping> itemMappings) {
         this.bamboo = load(itemMappings, "bamboo");
@@ -66,6 +67,7 @@ public class StoredItemMappings {
         this.shield = load(itemMappings, "shield");
         this.wheat = load(itemMappings, "wheat");
         this.writableBook = load(itemMappings, "writable_book");
+        this.writtenBook = load(itemMappings, "written_book");
     }
 
     @Nonnull

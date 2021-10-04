@@ -60,6 +60,10 @@ public class InventoryUtils {
      * each recipe needs a unique network ID (or else in .200 the client crashes).
      */
     public static int LAST_RECIPE_NET_ID;
+    /**
+     * Book cloning recipe ID; stored separately as its recipe works differently from others.
+     */
+    public static int BOOK_CLONING_RECIPE_ID;
     
     public static final ItemStack REFRESH_ITEM = new ItemStack(1, 127, new CompoundTag(""));
 
