@@ -59,7 +59,7 @@ public final class Team {
         entities = new ObjectOpenHashSet<>();
     }
 
-    public Team addEntities(boolean updateDisplayNames, String... names) {
+    public Set<String> addEntities(String... names) {
         Set<String> added = new HashSet<>();
         for (String name : names) {
             if (entities.add(name)) {
@@ -68,7 +68,7 @@ public final class Team {
         }
 
         if (added.isEmpty()) {
-            return this;
+            return added;
         }
         // we don't have to change the updateType,
         // because the scores itself need updating, not the team
@@ -81,20 +81,20 @@ public final class Team {
             }
         }
 
-        if (updateDisplayNames) {
-            scoreboard.updateEntityNames(this, added, true);
-        }
-        return this;
+        return added;
     }
 
-    public void removeEntities(String... names) {
+    /**
+     * @return all removed entities from this team
+     */
+    public Set<String> removeEntities(String... names) {
         Set<String> removed = new HashSet<>();
         for (String name : names) {
             if (entities.remove(name)) {
                 removed.add(name);
             }
         }
-        scoreboard.updateEntityNames(null, removed, true);
+        return removed;
     }
 
     public boolean hasEntity(String name) {

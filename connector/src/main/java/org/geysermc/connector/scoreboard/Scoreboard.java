@@ -129,7 +129,8 @@ public final class Scoreboard {
             return team;
         }
 
-        team = new Team(this, teamName).addEntities(false, players);
+        team = new Team(this, teamName);
+        team.addEntities(players);
         teams.put(teamName, team);
         return team;
     }
@@ -345,7 +346,7 @@ public final class Scoreboard {
      * Updates the display name of a set of entities within a given team. The team may also be null if the set is being removed
      * from a team.
      */
-    void updateEntityNames(@Nullable Team team, Set<String> names, boolean teamChange) {
+    public void updateEntityNames(@Nullable Team team, Set<String> names, boolean teamChange) {
         if (names.remove(session.getPlayerEntity().getUsername()) && teamChange) {
             // If the player's team changed, then other entities' teams may modify their visibility based on team status
             refreshSessionPlayerDisplays();
