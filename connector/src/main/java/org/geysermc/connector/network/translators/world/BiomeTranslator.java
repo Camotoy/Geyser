@@ -35,20 +35,15 @@ import org.geysermc.connector.network.translators.world.chunk.BlockStorage;
 import org.geysermc.connector.network.translators.world.chunk.GeyserChunkSection;
 import org.geysermc.connector.network.translators.world.chunk.bitarray.SingletonBitArray;
 import org.geysermc.connector.registry.Registries;
-import org.geysermc.connector.utils.MathUtils;
 
 // Based off of ProtocolSupport's LegacyBiomeData.java:
 // https://github.com/ProtocolSupport/ProtocolSupport/blob/b2cad35977f3fcb65bee57b9e14fc9c975f71d32/src/protocolsupport/protocol/typeremapper/legacy/LegacyBiomeData.java
 // Array index formula by https://wiki.vg/Chunk_Format
 public class BiomeTranslator {
 
-    public static void loadServerBiomes(GeyserSession session, CompoundTag codec) {
+    public static void loadServerBiomes(GeyserSession session, ListTag serverBiomes) {
         Int2IntMap biomeTranslations = session.getBiomeTranslations();
         biomeTranslations.clear();
-
-        CompoundTag worldGen = codec.get("minecraft:worldgen/biome");
-        ListTag serverBiomes = worldGen.get("value");
-        session.setBiomeGlobalPalette(MathUtils.getGlobalPaletteForSize(serverBiomes.size()));
 
         for (Tag tag : serverBiomes) {
             CompoundTag biomeTag = (CompoundTag) tag;

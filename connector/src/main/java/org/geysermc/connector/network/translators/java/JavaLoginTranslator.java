@@ -31,9 +31,13 @@ import com.github.steveice10.mc.protocol.data.game.setting.SkinPart;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundLoginPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.ServerboundClientInformationPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.ServerboundCustomPayloadPacket;
+import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
+import com.github.steveice10.opennbt.tag.builtin.ListTag;
 import com.nukkitx.protocol.bedrock.data.GameRuleData;
 import com.nukkitx.protocol.bedrock.data.PlayerPermission;
-import com.nukkitx.protocol.bedrock.packet.*;
+import com.nukkitx.protocol.bedrock.packet.AdventureSettingsPacket;
+import com.nukkitx.protocol.bedrock.packet.GameRulesChangedPacket;
+import com.nukkitx.protocol.bedrock.packet.SetPlayerGameTypePacket;
 import org.geysermc.connector.common.AuthType;
 import org.geysermc.connector.entity.player.PlayerEntity;
 import org.geysermc.connector.network.session.GeyserSession;
@@ -42,6 +46,7 @@ import org.geysermc.connector.network.translators.Translator;
 import org.geysermc.connector.network.translators.world.BiomeTranslator;
 import org.geysermc.connector.utils.ChunkUtils;
 import org.geysermc.connector.utils.DimensionUtils;
+import org.geysermc.connector.utils.MathUtils;
 import org.geysermc.connector.utils.PluginMessageUtils;
 
 import java.util.Arrays;
@@ -53,6 +58,18 @@ public class JavaLoginTranslator extends PacketTranslator<ClientboundLoginPacket
 
     @Override
     public void translate(GeyserSession session, ClientboundLoginPacket packet) {
+        // Load this information now so chunk information pre-loaded outside of the thread is also in sync
+        CompoundTag dimensionTag = packet.getDimensionCodec();
+        CompoundTag worldGen = dimensionTag.get("minecraft:worldgen/biome");
+        ListTag serverBiomes = worldGen.get("value");
+        session.setBiomeGlobalPalette(MathUtils.getGlobalPaletteForSize(serverBiomes.size()));
+
+        session.getChunkCache().setHeightY(((Number) packet.getDimension().get("height").getValue()).intValue());
+
+        session.executeInEventLoop(() -> translate(session, packet, serverBiomes));
+    }
+
+    public void translate(GeyserSession session, ClientboundLoginPacket packet, ListTag biomes) {
         PlayerEntity entity = session.getPlayerEntity();
         entity.setEntityId(packet.getEntityId());
 
@@ -67,7 +84,7 @@ public class JavaLoginTranslator extends PacketTranslator<ClientboundLoginPacket
         }
         session.setWorldName(packet.getWorldName());
 
-        BiomeTranslator.loadServerBiomes(session, packet.getDimensionCodec());
+        BiomeTranslator.loadServerBiomes(session, biomes);
         session.getTagCache().clear();
 
         session.setGameMode(packet.getGameMode());

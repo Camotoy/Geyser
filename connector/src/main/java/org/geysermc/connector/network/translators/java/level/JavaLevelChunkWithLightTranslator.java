@@ -65,11 +65,17 @@ import org.geysermc.connector.network.translators.world.chunk.bitarray.BitArrayV
 import org.geysermc.connector.network.translators.world.chunk.bitarray.SingletonBitArray;
 import org.geysermc.connector.registry.BlockRegistries;
 import org.geysermc.connector.utils.BlockEntityUtils;
+import org.geysermc.connector.utils.ChunkDecodePool;
 import org.geysermc.connector.utils.ChunkUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ForkJoinTask;
 
 import static org.geysermc.connector.utils.ChunkUtils.*;
 
@@ -78,19 +84,22 @@ public class JavaLevelChunkWithLightTranslator extends PacketTranslator<Clientbo
 
     @Override
     public void translate(GeyserSession session, ClientboundLevelChunkWithLightPacket packet) {
+        int biomeGlobalPalette = session.getBiomeGlobalPalette();
+        int chunkSize = session.getChunkCache().getChunkHeightY();
+        ForkJoinTask<ChunkSection[]> future = ChunkDecodePool.submitChunkTask(packet.getChunkData(), chunkSize, biomeGlobalPalette);
+        session.executeInEventLoop(() -> translate(session, packet, future));
+    }
+
+    private void translate(GeyserSession session, ClientboundLevelChunkWithLightPacket packet, ForkJoinTask<ChunkSection[]> future) {
         if (session.isSpawned()) {
             ChunkUtils.updateChunkPosition(session, session.getPlayerEntity().getPosition().toInt());
         }
 
         // Ensure that, if the player is using lower world heights, the position is not offset
         int yOffset = session.getChunkCache().getChunkMinY();
-        int chunkSize = session.getChunkCache().getChunkHeightY();
-        int biomeGlobalPalette = session.getBiomeGlobalPalette();
 
         // Temporarily stores compound tags of Bedrock-only block entities
         List<NbtMap> bedrockOnlyBlockEntities = new ArrayList<>();
-        DataPalette[] javaChunks = new DataPalette[chunkSize];
-        DataPalette[] javaBiomes = new DataPalette[chunkSize];
 
         BitSet waterloggedPaletteIds = new BitSet();
         BitSet pistonOrFlowerPaletteIds = new BitSet();
@@ -101,12 +110,27 @@ public class JavaLevelChunkWithLightTranslator extends PacketTranslator<Clientbo
         int sectionCount;
         byte[] payload;
         ByteBuf byteBuf = null;
+
+        ChunkSection[] javaSections;
+        try {
+            javaSections = future.get();
+        } catch (ExecutionException | InterruptedException e) {
+            session.getConnector().getLogger().error("Error while trying to get decoded Java sections!", e);
+            return;
+        }
+        if (javaSections == null) {
+            // Null on error
+            return;
+        }
+        DataPalette[] javaChunks = new DataPalette[javaSections.length];
+        DataPalette[] javaBiomes = new DataPalette[javaChunks.length];
+
         GeyserChunkSection[] sections = new GeyserChunkSection[javaChunks.length - (yOffset + ((overworld ? MINIMUM_ACCEPTED_HEIGHT_OVERWORLD : MINIMUM_ACCEPTED_HEIGHT) >> 4))];
 
         try {
             NetInput in = new StreamNetInput(new ByteArrayInputStream(packet.getChunkData()));
-            for (int sectionY = 0; sectionY < chunkSize; sectionY++) {
-                ChunkSection javaSection = ChunkSection.read(in, biomeGlobalPalette);
+            for (int sectionY = 0; sectionY < javaSections.length; sectionY++) {
+                ChunkSection javaSection = javaSections[sectionY];
                 javaChunks[sectionY] = javaSection.getChunkData();
                 javaBiomes[sectionY] = javaSection.getBiomeData();
 
@@ -366,5 +390,10 @@ public class JavaLevelChunkWithLightTranslator extends PacketTranslator<Clientbo
                 entry.getValue().updateBlock(true);
             }
         }
+    }
+
+    @Override
+    public boolean shouldExecuteInEventLoop() {
+        return false;
     }
 }

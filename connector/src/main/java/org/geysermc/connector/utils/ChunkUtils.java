@@ -260,7 +260,6 @@ public class ChunkUtils {
         }
 
         session.getChunkCache().setMinY(minY);
-        session.getChunkCache().setHeightY(maxY);
 
         // Load world coordinate scale for the world border
         double coordinateScale = ((DoubleTag) dimensionTag.get("coordinate_scale")).getValue();
