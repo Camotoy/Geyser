@@ -44,6 +44,12 @@ public class JavaRespawnTranslator extends PacketTranslator<ClientboundRespawnPa
 
     @Override
     public void translate(GeyserSession session, ClientboundRespawnPacket packet) {
+        session.getChunkCache().setHeightY(((Number) packet.getDimension().get("height").getValue()).intValue());
+
+        session.executeInEventLoop(() -> translate0(session, packet));
+    }
+
+    public void translate0(GeyserSession session, ClientboundRespawnPacket packet) {
         SessionPlayerEntity entity = session.getPlayerEntity();
 
         entity.setHealth(entity.getMaxHealth());
