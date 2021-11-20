@@ -137,4 +137,9 @@ public class JavaLoginTranslator extends PacketTranslator<ClientboundLoginPacket
 
         ChunkUtils.loadDimensionTag(session, packet.getDimension());
     }
+
+    @Override
+    public boolean shouldExecuteInEventLoop() {
+        return false;
+    }
 }
