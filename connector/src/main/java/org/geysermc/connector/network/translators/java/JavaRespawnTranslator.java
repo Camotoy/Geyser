@@ -49,7 +49,7 @@ public class JavaRespawnTranslator extends PacketTranslator<ClientboundRespawnPa
         session.executeInEventLoop(() -> translate0(session, packet));
     }
 
-    public void translate0(GeyserSession session, ClientboundRespawnPacket packet) {
+    private void translate0(GeyserSession session, ClientboundRespawnPacket packet) {
         SessionPlayerEntity entity = session.getPlayerEntity();
 
         entity.setHealth(entity.getMaxHealth());
@@ -97,5 +97,10 @@ public class JavaRespawnTranslator extends PacketTranslator<ClientboundRespawnPa
         }
 
         ChunkUtils.loadDimensionTag(session, packet.getDimension());
+    }
+
+    @Override
+    public boolean shouldExecuteInEventLoop() {
+        return false;
     }
 }
