@@ -69,9 +69,10 @@ public class ChunkCache {
     /**
      * Doesn't check for cache enabled, so don't use this without checking that first!
      */
-    private GeyserChunk getChunk(int chunkX, int chunkZ) {
+    // TODO standalone only atm
+    public GeyserChunk getChunk(int chunkX, int chunkZ) {
         long chunkPosition = MathUtils.chunkPositionToLong(chunkX, chunkZ);
-        return chunks.getOrDefault(chunkPosition, null);
+        return chunks.get(chunkPosition);
     }
 
     public void updateBlock(int x, int y, int z, int block) {
