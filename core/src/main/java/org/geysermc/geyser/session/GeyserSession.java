@@ -461,6 +461,12 @@ public class GeyserSession implements GeyserConnection, CommandSender {
     @Setter
     private boolean waitingForStatistics = false;
 
+    /**
+     * Set as a holding point if command descriptions are sent from the server.
+     */
+    @Setter
+    private Map<String, String> temporaryCommandDescriptions = null;
+
     private final Set<String> fogNameSpaces = new HashSet<>();
 
     private final Set<UUID> emotes;

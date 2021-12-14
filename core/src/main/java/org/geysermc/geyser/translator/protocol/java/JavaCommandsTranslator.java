@@ -113,6 +113,7 @@ public class JavaCommandsTranslator extends PacketTranslator<ClientboundCommands
         }
 
         CommandManager manager = session.getGeyser().getCommandManager();
+        Map<String, String> commandDescriptions = session.getTemporaryCommandDescriptions();
         CommandNode[] nodes = packet.getNodes();
         List<CommandData> commandData = new ArrayList<>();
         IntSet commandNodes = new IntOpenHashSet();
@@ -128,7 +129,7 @@ public class JavaCommandsTranslator extends PacketTranslator<ClientboundCommands
             CommandNode node = nodes[nodeIndex];
 
             // Make sure we don't have duplicated commands (happens if there is more than 1 root node)
-            if (!commandNodes.add(nodeIndex) || !knownAliases.add(node.getName().toLowerCase())) continue;
+            if (!commandNodes.add(nodeIndex) || !knownAliases.add(node.getName().toLowerCase(Locale.ROOT))) continue;
 
             // Get and update the commandArgs list with the found arguments
             if (node.getChildIndices().length >= 1) {
@@ -140,9 +141,19 @@ public class JavaCommandsTranslator extends PacketTranslator<ClientboundCommands
             // Get and parse all params
             CommandParamData[][] params = getParams(session, nodes[nodeIndex], nodes);
 
+            String description;
+            if (commandDescriptions != null) {
+                String name = node.getName();
+                description = commandDescriptions.get(name);
+                if (description == null) {
+                    description = manager.getDescription(node.getName().toLowerCase(Locale.ROOT));
+                }
+            } else {
+                description = manager.getDescription(node.getName().toLowerCase(Locale.ROOT));
+            }
+
             // Insert the alias name into the command list
-            commands.computeIfAbsent(new BedrockCommandInfo(manager.getDescription(node.getName().toLowerCase(Locale.ROOT)), params),
-                    index -> new HashSet<>()).add(node.getName().toLowerCase());
+            commands.computeIfAbsent(new BedrockCommandInfo(description, params), index -> new HashSet<>()).add(node.getName().toLowerCase());
         }
 
         // The command flags, not sure what these do apart from break things
@@ -169,6 +180,8 @@ public class JavaCommandsTranslator extends PacketTranslator<ClientboundCommands
 
         // Finally, send the commands to the client
         session.sendUpstreamPacket(availableCommandsPacket);
+
+        session.setTemporaryCommandDescriptions(null);
     }
 
     /**

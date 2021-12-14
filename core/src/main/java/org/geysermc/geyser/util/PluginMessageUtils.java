@@ -31,10 +31,12 @@ import org.geysermc.geyser.GeyserImpl;
 import org.geysermc.geyser.session.GeyserSession;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 
 public class PluginMessageUtils {
     private static final String SKIN_CHANNEL = "floodgate:skin";
     private static final byte[] GEYSER_BRAND_DATA;
+    private static final byte[] GEYSER_REGISTER_DATA;
     private static final byte[] FLOODGATE_REGISTER_DATA;
 
     static {
@@ -45,7 +47,14 @@ public class PluginMessageUtils {
                         .put(data)
                         .array();
 
-        FLOODGATE_REGISTER_DATA = (SKIN_CHANNEL + "\0floodgate:form").getBytes(Charsets.UTF_8);
+        if (GeyserImpl.getInstance().getCommandManager().shouldRequestCustomDescriptions()) {
+            String geyserRegisterData = "geyser:commands";
+            GEYSER_REGISTER_DATA = geyserRegisterData.getBytes(StandardCharsets.UTF_8);
+            FLOODGATE_REGISTER_DATA = (geyserRegisterData + "\0" + SKIN_CHANNEL + "\0floodgate:form").getBytes(Charsets.UTF_8);
+        } else {
+            GEYSER_REGISTER_DATA = new byte[0];
+            FLOODGATE_REGISTER_DATA = (SKIN_CHANNEL + "\0floodgate:form").getBytes(Charsets.UTF_8);
+        }
     }
 
     /**
@@ -58,7 +67,16 @@ public class PluginMessageUtils {
     }
 
     /**
-     * Get the prebuilt register data as a byte array
+     * Get the prebuilt Geyser register data as a byte array
+     *
+     * @return the register data of the Geyser channels
+     */
+    public static byte[] getGeyserRegisterData() {
+        return GEYSER_REGISTER_DATA;
+    }
+
+    /**
+     * Get the prebuilt Floodgate and Geyser register data as a byte array
      *
      * @return the register data of the Floodgate channels
      */

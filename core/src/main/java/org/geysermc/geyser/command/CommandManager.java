@@ -119,4 +119,11 @@ public abstract class CommandManager {
      * @return Command description
      */
     public abstract String getDescription(String command);
+
+    /**
+     * @return true if we should request custom descriptions from the Java server.
+     */
+    public boolean shouldRequestCustomDescriptions() {
+        return true;
+    }
 }

@@ -25,21 +25,27 @@
 
 package org.geysermc.geyser.translator.protocol.java;
 
-import com.github.steveice10.mc.protocol.packet.ingame.serverbound.ServerboundCustomPayloadPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundCustomPayloadPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.serverbound.ServerboundCustomPayloadPacket;
+import com.github.steveice10.packetlib.io.NetInput;
+import com.github.steveice10.packetlib.io.stream.StreamNetInput;
 import com.google.common.base.Charsets;
 import com.nukkitx.protocol.bedrock.packet.TransferPacket;
-import org.geysermc.geyser.GeyserImpl;
-import org.geysermc.geyser.GeyserLogger;
-import org.geysermc.geyser.session.auth.AuthType;
-import org.geysermc.geyser.session.GeyserSession;
-import org.geysermc.geyser.translator.protocol.PacketTranslator;
-import org.geysermc.geyser.translator.protocol.Translator;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import org.geysermc.cumulus.Form;
 import org.geysermc.cumulus.Forms;
 import org.geysermc.cumulus.util.FormType;
+import org.geysermc.geyser.GeyserImpl;
+import org.geysermc.geyser.GeyserLogger;
+import org.geysermc.geyser.session.GeyserSession;
+import org.geysermc.geyser.session.auth.AuthType;
+import org.geysermc.geyser.translator.protocol.PacketTranslator;
+import org.geysermc.geyser.translator.protocol.Translator;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 @Translator(packet = ClientboundCustomPayloadPacket.class)
 public class JavaCustomPayloadTranslator extends PacketTranslator<ClientboundCustomPayloadPacket> {
@@ -47,12 +53,31 @@ public class JavaCustomPayloadTranslator extends PacketTranslator<ClientboundCus
 
     @Override
     public void translate(GeyserSession session, ClientboundCustomPayloadPacket packet) {
-        // The only plugin messages it has to listen for are Floodgate plugin messages
-        if (session.getRemoteAuthType() != AuthType.FLOODGATE) {
+        String channel = packet.getChannel();
+
+        if (channel.equals("geyser:commands")) {
+            NetInput in = new StreamNetInput(new ByteArrayInputStream(packet.getData()));
+            try {
+                int length = in.readVarInt();
+                Map<String, String> commandDescriptions = new Object2ObjectOpenHashMap<>(length);
+                for (int i = 0; i < length; i++) {
+                    String command = in.readString();
+                    String description = in.readString();
+                    commandDescriptions.put(command, description);
+                }
+                System.out.println(commandDescriptions);
+                session.setTemporaryCommandDescriptions(commandDescriptions);
+            } catch (IOException e) {
+                e.printStackTrace();
+                return;
+            }
             return;
         }
 
-        String channel = packet.getChannel();
+        // The only plugin messages can listen for from here are Floodgate plugin messages
+        if (session.getRemoteAuthType() != AuthType.FLOODGATE) {
+            return;
+        }
 
         if (channel.equals("floodgate:form")) {
             byte[] data = packet.getData();
