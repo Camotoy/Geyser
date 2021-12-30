@@ -39,18 +39,18 @@ import org.apache.logging.log4j.core.Appender;
 import org.apache.logging.log4j.core.Logger;
 import org.apache.logging.log4j.core.appender.ConsoleAppender;
 import org.geysermc.common.PlatformType;
-import org.geysermc.geyser.GeyserImpl;
 import org.geysermc.geyser.GeyserBootstrap;
+import org.geysermc.geyser.GeyserImpl;
 import org.geysermc.geyser.command.CommandManager;
 import org.geysermc.geyser.configuration.GeyserConfiguration;
 import org.geysermc.geyser.configuration.GeyserJacksonConfiguration;
 import org.geysermc.geyser.dump.BootstrapDumpInfo;
 import org.geysermc.geyser.ping.GeyserLegacyPingPassthrough;
 import org.geysermc.geyser.ping.IGeyserPingPassthrough;
-import org.geysermc.geyser.util.FileUtils;
-import org.geysermc.geyser.text.GeyserLocale;
 import org.geysermc.geyser.platform.standalone.command.GeyserCommandManager;
 import org.geysermc.geyser.platform.standalone.gui.GeyserStandaloneGUI;
+import org.geysermc.geyser.text.GeyserLocale;
+import org.geysermc.geyser.util.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -186,8 +186,6 @@ public class GeyserStandaloneBootstrap implements GeyserBootstrap {
         }
 
         geyserLogger = new GeyserStandaloneLogger();
-
-        LoopbackUtil.checkLoopback(geyserLogger);
         
         try {
             File configFile = FileUtils.fileOrCopiedFromResource(new File(configFilename), "config.yml",

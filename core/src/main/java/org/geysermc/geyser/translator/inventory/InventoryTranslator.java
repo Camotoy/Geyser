@@ -626,7 +626,7 @@ public abstract class InventoryTranslator {
                         return rejectRequest(request);
 
                     int javaSlot = bedrockSlotToJava(consumeAction.getSource());
-                    consumedSlots.merge(javaSlot, consumeAction.getCount(), Integer::sum);
+                    consumedSlots.mergeInt(javaSlot, consumeAction.getCount(), Integer::sum);
 
                     int gridSlot = 1 + ingredientIndex + ((ingredientIndex / recipeWidth) * (gridDimensions - recipeWidth));
                     Int2IntMap sources = ingredientMap.computeIfAbsent(gridSlot, k -> new Int2IntOpenHashMap());

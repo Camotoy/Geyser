@@ -193,6 +193,8 @@ public class GeyserImpl implements GeyserApi {
         GeyserConfiguration config = bootstrap.getGeyserConfig();
         logger.setDebug(config.isDebugMode());
 
+        LoopbackUtil.checkLoopback(logger);
+
         ScoreboardUpdater.init();
 
         ResourcePack.loadPacks();

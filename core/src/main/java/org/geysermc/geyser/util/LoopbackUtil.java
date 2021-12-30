@@ -23,8 +23,9 @@
  * @link https://github.com/GeyserMC/Geyser
  */
 
-package org.geysermc.geyser.platform.standalone;
+package org.geysermc.geyser.util;
 
+import org.geysermc.geyser.GeyserLogger;
 import org.geysermc.geyser.text.ChatColor;
 import org.geysermc.geyser.text.GeyserLocale;
 
@@ -33,12 +34,13 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 
 public class LoopbackUtil {
-    private static final String checkExemption = "powershell -Command \"CheckNetIsolation LoopbackExempt -s\""; // Java's Exec feature runs as CMD, NetIsolation is only accessible from PowerShell.
-    private static final String loopbackCommand = "powershell -Command \"CheckNetIsolation LoopbackExempt -a -n='Microsoft.MinecraftUWP_8wekyb3d8bbwe'\"";
+    private static final String checkExemption = "CheckNetIsolation LoopbackExempt -s";
+    private static final String loopbackCommand = "CheckNetIsolation LoopbackExempt -a -n='Microsoft.MinecraftUWP_8wekyb3d8bbwe'";
     private static final String startScript = "powershell -Command \"Start-Process 'cmd' -ArgumentList /c,%temp%/loopback_minecraft.bat -Verb runAs\"";
 
-    public static void checkLoopback(GeyserStandaloneLogger geyserLogger) {
-        if (System.getProperty("os.name").equalsIgnoreCase("Windows 10")) {
+    public static void checkLoopback(GeyserLogger geyserLogger) {
+        String os = System.getProperty("os.name");
+        if (os.equalsIgnoreCase("Windows 10") || os.equalsIgnoreCase("Windows 11")) {
             try {
                 Process process = Runtime.getRuntime().exec(checkExemption);
                 InputStream is = process.getInputStream();
@@ -59,9 +61,7 @@ public class LoopbackUtil {
                     geyserLogger.info(ChatColor.AQUA + GeyserLocale.getLocaleStringLog("geyser.bootstrap.loopback.added"));
                 }
             } catch (Exception e) {
-                e.printStackTrace();
-
-                geyserLogger.error(GeyserLocale.getLocaleStringLog("geyser.bootstrap.loopback.failed"));
+                geyserLogger.error(GeyserLocale.getLocaleStringLog("geyser.bootstrap.loopback.failed"), e);
             }
         }
     }
