@@ -27,7 +27,6 @@ package org.geysermc.geyser.registry.type;
 
 import com.nukkitx.nbt.NbtList;
 import com.nukkitx.nbt.NbtMap;
-import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import lombok.Builder;
 import lombok.Value;
@@ -57,8 +56,6 @@ public class BlockMappings {
 
     Object2IntMap<NbtMap> itemFrames;
     Map<String, NbtMap> flowerPotBlocks;
-
-    IntSet jigsawStateIds;
 
     public int getBedrockBlockId(int state) {
         if (state >= this.javaToBedrockBlocks.length) {

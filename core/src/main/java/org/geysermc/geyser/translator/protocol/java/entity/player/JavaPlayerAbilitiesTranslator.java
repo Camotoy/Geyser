@@ -37,6 +37,8 @@ public class JavaPlayerAbilitiesTranslator extends PacketTranslator<ClientboundP
     public void translate(GeyserSession session, ClientboundPlayerAbilitiesPacket packet) {
         session.setCanFly(packet.isCanFly());
         session.setFlying(packet.isFlying());
+        session.setInvulnerable(packet.isInvincible());
+        session.setInstabuild(packet.isCreative());
         session.sendAdventureSettings();
     }
 }

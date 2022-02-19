@@ -122,6 +122,7 @@ public class ItemRegistryPopulator {
 
             IntList boats = new IntArrayList();
             IntList buckets = new IntArrayList();
+            IntList candles = new IntArrayList();
             IntList spawnEggs = new IntArrayList();
             List<ItemData> carpets = new ObjectArrayList<>();
 
@@ -390,6 +391,8 @@ public class ItemRegistryPopulator {
                     boats.add(bedrockId);
                 } else if (javaIdentifier.contains("bucket") && !javaIdentifier.contains("milk")) {
                     buckets.add(bedrockId);
+                } else if (javaIdentifier.endsWith("candle")) {
+                    candles.add(itemIndex);
                 } else if (javaIdentifier.contains("_carpet") && !javaIdentifier.contains("moss")) {
                     // This should be the numerical order Java sends as an integer value for llamas
                     carpets.add(ItemData.builder()
@@ -500,6 +503,7 @@ public class ItemRegistryPopulator {
                     .javaOnlyItems(javaOnlyItems)
                     .bucketIds(buckets)
                     .boatIds(boats)
+                    .candleIds(candles)
                     .spawnEggIds(spawnEggs)
                     .carpets(carpets)
                     .furnaceMinecartData(furnaceMinecartData)

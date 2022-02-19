@@ -30,27 +30,23 @@ import com.google.common.collect.ImmutableMap;
 import com.nukkitx.nbt.*;
 import com.nukkitx.protocol.bedrock.v471.Bedrock_v471;
 import com.nukkitx.protocol.bedrock.v486.Bedrock_v486;
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
-import it.unimi.dsi.fastutil.ints.IntSet;
-import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.objects.ObjectIntPair;
+import it.unimi.dsi.fastutil.Pair;
+import it.unimi.dsi.fastutil.objects.*;
 import org.geysermc.geyser.GeyserImpl;
 import org.geysermc.geyser.level.block.BlockStateValues;
 import org.geysermc.geyser.level.physics.PistonBehavior;
 import org.geysermc.geyser.registry.BlockRegistries;
 import org.geysermc.geyser.registry.type.BlockMapping;
 import org.geysermc.geyser.registry.type.BlockMappings;
+import org.geysermc.geyser.registry.type.block.*;
 import org.geysermc.geyser.util.BlockUtils;
+import org.geysermc.geyser.util.InteractResult;
 
 import java.io.DataInputStream;
 import java.io.InputStream;
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 import java.util.function.BiFunction;
+import java.util.function.Predicate;
 import java.util.zip.GZIPInputStream;
 
 /**
@@ -146,8 +142,6 @@ public class BlockRegistryPopulator {
             Map<String, NbtMap> flowerPotBlocks = new Object2ObjectOpenHashMap<>();
             Object2IntMap<NbtMap> itemFrames = new Object2IntOpenHashMap<>();
 
-            IntSet jigsawStateIds = new IntOpenHashSet();
-
             BlockMappings.BlockMappingsBuilder builder = BlockMappings.builder();
             while (blocksIterator.hasNext()) {
                 javaRuntimeId++;
@@ -165,10 +159,6 @@ public class BlockRegistryPopulator {
                     case "minecraft:water[level=0]" -> waterRuntimeId = bedrockRuntimeId;
                     case "minecraft:command_block[conditional=false,facing=north]" -> commandBlockRuntimeId = bedrockRuntimeId;
                     case "minecraft:moving_piston[facing=north,type=normal]" -> movingBlockRuntimeId = bedrockRuntimeId;
-                }
-
-                if (javaId.contains("jigsaw")) {
-                    jigsawStateIds.add(bedrockRuntimeId);
                 }
 
                 boolean waterlogged = entry.getKey().contains("waterlogged=true")
@@ -227,7 +217,6 @@ public class BlockRegistryPopulator {
                     .javaIdentifierToBedrockTag(javaIdentifierToBedrockTag)
                     .itemFrames(itemFrames)
                     .flowerPotBlocks(flowerPotBlocks)
-                    .jigsawStateIds(jigsawStateIds)
                     .build());
         }
     }
@@ -241,6 +230,37 @@ public class BlockRegistryPopulator {
         }
 
         BlockRegistries.JAVA_BLOCKS.set(new BlockMapping[blocksJson.size()]); // Set array size to number of blockstates
+
+        Set<Pair<Predicate<String>, BlockSupplier>> blockTypes = new ObjectOpenHashSet<>();
+        blockTypes.add(Pair.of((name) -> name.startsWith("minecraft:beehive[") || name.startsWith("minecraft:bee_nest["), BeehiveBlock::new));
+        blockTypes.add(Pair.of((name) -> name.startsWith("minecraft:bell["), BellBlock::new));
+        blockTypes.add(Pair.of((name) -> name.startsWith("minecraft:cake["), CakeBlock::new));
+        blockTypes.add(Pair.of((name) -> name.contains("candle["), CandleBlock::new));
+        blockTypes.add(Pair.of((name) -> name.contains("campfire["), CampfireBlock::new));
+        blockTypes.add(Pair.of((name) -> name.contains("candle_cake["), CandleCakeBlock::new));
+        blockTypes.add(Pair.of((name) -> name.contains("cauldron"), CauldronBlock::new));
+        blockTypes.add(Pair.of((name) -> name.startsWith("minecraft:cave_vines"), CaveVinesBlock::new)); // Capture cave_vines and cave_vines_plant
+        blockTypes.add(Pair.of((name) -> name.contains("command_block["), CommandBlock::new));
+        blockTypes.add(Pair.of((name) -> name.startsWith("minecraft:comparator["), ComparatorBlock::new));
+        blockTypes.add(Pair.of((name) -> name.startsWith("minecraft:composter["), ComposterBlock::new));
+        blockTypes.add(Pair.of((name) -> name.startsWith("minecraft:daylight_detector["), DaylightDetectorBlock::new));
+        blockTypes.add(Pair.of((name) -> name.contains("door["), DoorBlock::new)); // Just roll with it I guess - will pick up trapdoors, and Bedrock doesn't have special noises for door types
+        blockTypes.add(Pair.of((name) -> name.equals("minecraft:dragon_egg"), DragonEggBlock::new));
+        blockTypes.add(Pair.of((name) -> name.startsWith("minecraft:ender_chest["), EnderChestBlock::new)); // TODO do we want to just have this as an override in the mappings generator?
+        blockTypes.add(Pair.of((name) -> name.contains("fence["), FenceBlock::new));
+        blockTypes.add(Pair.of((name) -> name.contains("fence_gate["), DoorBlock::new));
+        blockTypes.add(Pair.of((name) -> name.startsWith("minecraft:jigsaw["), JigsawBlock::new));
+        blockTypes.add(Pair.of((name) -> name.startsWith("minecraft:jukebox["), JukeboxBlock::new));
+        blockTypes.add(Pair.of((name) -> name.startsWith("minecraft:lectern["), LecternBlock::new));
+        blockTypes.add(Pair.of((name) -> name.equals("minecraft:pumpkin"), PumpkinBlock::new));
+        //TODO redstone ore, redstone wire
+        blockTypes.add(Pair.of((name) -> name.startsWith("minecraft:repeater["), RepeaterBlock::new));
+        blockTypes.add(Pair.of((name) -> name.startsWith("minecraft:respawn_anchor["), RespawnAnchorBlock::new));
+        blockTypes.add(Pair.of((name) -> name.contains("sign["), SignBlock::new));
+        blockTypes.add(Pair.of((name) -> name.startsWith("minecraft:structure_block["), StructureBlock::new));
+        blockTypes.add(Pair.of((name) -> name.startsWith("minecraft:sweet_berry_bush["), SweetBerryBushBlock::new));
+        blockTypes.add(Pair.of((name) -> name.startsWith("minecraft:tnt["), TntBlock::new));
+        blockTypes.add(Pair.of((name) -> name.contains("trapdoor["), DoorBlock::new));
 
         Deque<String> cleanIdentifiers = new ArrayDeque<>();
 
@@ -315,8 +335,26 @@ public class BlockRegistryPopulator {
             builder.javaIdentifier(javaId);
             builder.javaBlockId(uniqueJavaId);
 
+            JsonNode interactResult = entry.getValue().get("default_interact_result");
+            if (interactResult != null) {
+                builder.defaultInteractResult(InteractResult.valueOf(interactResult.asText()));
+            } else {
+                builder.defaultInteractResult(InteractResult.PASS);
+            }
+
             BlockRegistries.JAVA_IDENTIFIERS.register(javaId, javaRuntimeId);
-            BlockRegistries.JAVA_BLOCKS.register(javaRuntimeId, builder.build());
+            BlockMapping mapping = null;
+            for (Pair<Predicate<String>, BlockSupplier> blockType : blockTypes) {
+                if (blockType.key().test(javaId)) {
+                    mapping = builder.build(blockType.value());
+                    break;
+                }
+            }
+            if (mapping == null) {
+                // No special block type required for this.
+                mapping = builder.build(BlockMapping::new);
+            }
+            BlockRegistries.JAVA_BLOCKS.register(javaRuntimeId, mapping);
 
             // Keeping this here since this is currently unchanged between versions
             // It's possible to only have this store differences in names, but the key set of all Java names is used in sending command suggestions

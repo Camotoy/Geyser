@@ -61,6 +61,10 @@ public class PlayerInventory extends Inventory {
         cursor = newCursor;
     }
 
+    public GeyserItemStack getItemInHand(boolean mainHand) {
+        return mainHand ? getItemInHand() : getOffhand();
+    }
+
     public GeyserItemStack getItemInHand() {
         if (36 + heldItemSlot > this.size) {
             GeyserImpl.getInstance().getLogger().debug("Held item slot was larger than expected!");

@@ -228,6 +228,10 @@ public class BedrockInventoryTransactionTranslator extends PacketTranslator<Inve
                                 false);
                         session.sendDownstreamPacket(blockPacket);
 
+                        System.out.println(packet.getClickPosition());
+                        int worldBlockId = session.getGeyser().getWorldManager().getBlockAt(session, packet.getBlockPosition());
+                        System.out.println(BlockRegistries.JAVA_BLOCKS.get(worldBlockId).interactWith(session, packet.getBlockPosition(), packet.getClickPosition(), packet.getBlockFace(), true));
+
                         if (packet.getItemInHand() != null) {
                             // Otherwise boats will not be able to be placed in survival and buckets won't work on mobile
                             if (session.getItemMappings().getBoatIds().contains(packet.getItemInHand().getId())) {
@@ -256,19 +260,6 @@ public class BedrockInventoryTransactionTranslator extends PacketTranslator<Inve
                             }
                         }
 
-                        if (packet.getActions().isEmpty()) {
-                            if (session.getOpPermissionLevel() >= 2 && session.getGameMode() == GameMode.CREATIVE) {
-                                // Otherwise insufficient permissions
-                                if (session.getBlockMappings().getJigsawStateIds().contains(packet.getBlockRuntimeId())) {
-                                    ContainerOpenPacket openPacket = new ContainerOpenPacket();
-                                    openPacket.setBlockPosition(packet.getBlockPosition());
-                                    openPacket.setId((byte) 1);
-                                    openPacket.setType(ContainerType.JIGSAW_EDITOR);
-                                    openPacket.setUniqueEntityId(-1);
-                                    session.sendUpstreamPacket(openPacket);
-                                }
-                            }
-                        }
                         ItemMapping handItem = mappings.getMapping(packet.getItemInHand());
                         if (handItem.isBlock()) {
                             session.setLastBlockPlacePosition(blockPos);

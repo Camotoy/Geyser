@@ -25,8 +25,16 @@
 
 package org.geysermc.geyser.inventory.item;
 
+import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
+import com.github.steveice10.opennbt.tag.builtin.StringTag;
+import com.github.steveice10.opennbt.tag.builtin.Tag;
 import lombok.Getter;
+import org.geysermc.geyser.inventory.GeyserItemStack;
+import org.geysermc.geyser.registry.type.ItemMapping;
+import org.geysermc.geyser.session.GeyserSession;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Locale;
 
 @Getter
@@ -84,6 +92,32 @@ public enum Potion {
         this.bedrockId = (short) bedrockId;
     }
 
+    @Nullable
+    public static Potion getFromItem(GeyserSession session, @Nonnull GeyserItemStack itemStack) {
+        if (itemStack.isEmpty()) {
+            return null;
+        }
+        ItemMapping mapping = itemStack.getMapping(session);
+        if (!mapping.getJavaIdentifier().endsWith("potion")) {
+            return null;
+        }
+        return getFromNbt(itemStack.getNbt());
+    }
+
+    @Nullable
+    private static Potion getFromNbt(@Nullable CompoundTag tag) {
+        if (tag == null) {
+            return null;
+        }
+        Tag potionTag = tag.get("Potion");
+        if (potionTag instanceof StringTag) {
+            return getByJavaIdentifier(((StringTag) potionTag).getValue());
+        } else {
+            return null;
+        }
+    }
+
+    @Nullable
     public static Potion getByJavaIdentifier(String javaIdentifier) {
         for (Potion potion : VALUES) {
             if (potion.javaIdentifier.equals(javaIdentifier)) {

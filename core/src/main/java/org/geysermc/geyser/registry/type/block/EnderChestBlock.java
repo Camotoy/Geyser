@@ -23,25 +23,26 @@
  * @link https://github.com/GeyserMC/Geyser
  */
 
-package org.geysermc.geyser.translator.sound.block;
+package org.geysermc.geyser.registry.type.block;
 
 import com.nukkitx.math.vector.Vector3f;
-import com.nukkitx.protocol.bedrock.data.LevelEventType;
-import com.nukkitx.protocol.bedrock.packet.LevelEventPacket;
+import com.nukkitx.math.vector.Vector3i;
+import org.geysermc.geyser.level.physics.PistonBehavior;
+import org.geysermc.geyser.registry.type.BlockMapping;
 import org.geysermc.geyser.session.GeyserSession;
-import org.geysermc.geyser.translator.sound.BlockSoundInteractionTranslator;
-import org.geysermc.geyser.translator.sound.SoundTranslator;
+import org.geysermc.geyser.util.InteractResult;
+import org.jetbrains.annotations.Nullable;
 
-@SoundTranslator(blocks = "comparator")
-public class ComparatorSoundInteractionTranslator implements BlockSoundInteractionTranslator {
+import javax.annotation.Nonnull;
+
+public class EnderChestBlock extends BlockMapping {
+    public EnderChestBlock(String javaIdentifier, int javaBlockId, double hardness, boolean canBreakWithHand, int collisionIndex, @Nullable String pickItem, @Nonnull PistonBehavior pistonBehavior, boolean isBlockEntity, InteractResult defaultInteractResult) {
+        super(javaIdentifier, javaBlockId, hardness, canBreakWithHand, collisionIndex, pickItem, pistonBehavior, isBlockEntity, defaultInteractResult);
+    }
 
     @Override
-    public void translate(GeyserSession session, Vector3f position, String identifier) {
-        boolean powered = identifier.contains("mode=compare");
-        LevelEventPacket levelEventPacket = new LevelEventPacket();
-        levelEventPacket.setPosition(position);
-        levelEventPacket.setType(LevelEventType.SOUND_CLICK); //TODO: New ID?
-        levelEventPacket.setData(powered ? 500 : 550);
-        session.sendUpstreamPacket(levelEventPacket);
+    public InteractResult interactWith(GeyserSession session, Vector3i blockPosition, Vector3f clickPosition, int face, boolean isMainHand) {
+        // Always triggers success, but the mappings generator just doesn't pick up on it
+        return InteractResult.SUCCESS;
     }
 }

@@ -29,11 +29,12 @@ import com.github.steveice10.mc.protocol.data.game.level.block.BlockEntityType;
 import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
 import com.github.steveice10.opennbt.tag.builtin.StringTag;
 import com.nukkitx.nbt.NbtMapBuilder;
+import org.geysermc.geyser.session.GeyserSession;
 
 @BlockEntity(type = BlockEntityType.JIGSAW)
 public class JigsawBlockBlockEntityTranslator extends BlockEntityTranslator {
     @Override
-    public void translateTag(NbtMapBuilder builder, CompoundTag tag, int blockState) {
+    public void translateTag(GeyserSession session, NbtMapBuilder builder, CompoundTag tag, int blockState) {
         builder.put("joint", ((StringTag) tag.get("joint")).getValue());
         builder.put("name", ((StringTag) tag.get("name")).getValue());
         builder.put("target_pool", ((StringTag) tag.get("pool")).getValue());

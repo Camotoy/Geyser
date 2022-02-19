@@ -272,5 +272,7 @@ public class ChunkUtils {
 
         // Set if piglins/hoglins should shake
         session.setDimensionPiglinSafe(((Number) dimensionTag.get("piglin_safe").getValue()).byteValue() != (byte) 0);
+        // Set the behavior of respawn anchors
+        session.setRespawnAnchorWorks(((Number) dimensionTag.get("respawn_anchor_works").getValue()).byteValue() != (byte) 0);
     }
 }

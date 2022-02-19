@@ -35,13 +35,14 @@ import com.nukkitx.nbt.NbtMapBuilder;
 import com.nukkitx.nbt.NbtType;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
+import org.geysermc.geyser.session.GeyserSession;
 
 import java.util.LinkedHashMap;
 
 @BlockEntity(type = BlockEntityType.END_GATEWAY)
 public class EndGatewayBlockEntityTranslator extends BlockEntityTranslator {
     @Override
-    public void translateTag(NbtMapBuilder builder, CompoundTag tag, int blockState) {
+    public void translateTag(GeyserSession session, NbtMapBuilder builder, CompoundTag tag, int blockState) {
         Tag ageTag = tag.get("Age");
         if (ageTag instanceof LongTag) {
             builder.put("Age", (int) ((long) ageTag.getValue()));

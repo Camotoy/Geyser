@@ -232,6 +232,10 @@ public class GeyserSession implements GeyserConnection, CommandSender {
     private final Map<Vector3i, ItemFrameEntity> itemFrameCache = new Object2ObjectOpenHashMap<>();
 
     /**
+     * Contains a list of all full campfires. If a campfire does not have all its slots filled, it is not present here.
+     */
+    private final Set<Vector3i> campfireCache = new ObjectOpenHashSet<>();
+    /**
      * Stores a list of all lectern locations and their block entity tags.
      * See {@link WorldManager#getLecternDataAt(GeyserSession, int, int, int, boolean)}
      * for more information.
@@ -314,6 +318,11 @@ public class GeyserSession implements GeyserConnection, CommandSender {
      */
     @Setter
     private boolean dimensionPiglinSafe;
+    /**
+     * Whether or not the respawn anchor will operate in the current dimension
+     */
+    @Setter
+    private boolean respawnAnchorWorks;
 
     @Setter
     private int breakingBlock;
@@ -353,6 +362,7 @@ public class GeyserSession implements GeyserConnection, CommandSender {
     private Int2ObjectMap<Recipe> craftingRecipes;
     private final Set<String> unlockedRecipes;
     private final AtomicInteger lastRecipeNetId;
+    private final IntList campfireRecipes = new IntArrayList();
 
     /**
      * Saves a list of all stonecutter recipes, for use in a stonecutter inventory.
@@ -448,6 +458,12 @@ public class GeyserSession implements GeyserConnection, CommandSender {
      * If the current player is flying
      */
     private boolean flying = false;
+
+    @Setter
+    private boolean invulnerable = false;
+
+    @Setter
+    private boolean instabuild = false;
 
     /**
      * Caches current rain status.
@@ -1529,6 +1545,26 @@ public class GeyserSession implements GeyserConnection, CommandSender {
         }
         PlayerFogPacket packet = new PlayerFogPacket();
         packet.getFogStack().addAll(this.fogNameSpaces);
+        sendUpstreamPacket(packet);
+    }
+
+    public boolean canBuildForGamemode() {
+        return this.gameMode != GameMode.ADVENTURE && this.gameMode != GameMode.SPECTATOR;
+    }
+
+    public boolean canEat(boolean itemCanAlwaysBeEaten) {
+        return invulnerable || itemCanAlwaysBeEaten || playerEntity.getAttributes().get(GeyserAttributeType.HUNGER).getValue() < 20;
+    }
+
+    public boolean canUseCommandBlocks() {
+        return instabuild && opPermissionLevel >= 2;
+    }
+
+    public void playSound(SoundEvent soundEvent, Vector3f position) {
+        LevelSoundEvent2Packet packet = new LevelSoundEvent2Packet();
+        packet.setSound(soundEvent);
+        packet.setPosition(position);
+        packet.setIdentifier("");
         sendUpstreamPacket(packet);
     }
 }

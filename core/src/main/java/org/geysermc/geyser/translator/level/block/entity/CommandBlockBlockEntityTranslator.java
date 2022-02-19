@@ -29,12 +29,13 @@ import com.github.steveice10.mc.protocol.data.game.level.block.BlockEntityType;
 import com.github.steveice10.opennbt.tag.builtin.*;
 import com.nukkitx.nbt.NbtMapBuilder;
 import org.geysermc.geyser.level.block.BlockStateValues;
+import org.geysermc.geyser.session.GeyserSession;
 import org.geysermc.geyser.translator.text.MessageTranslator;
 
 @BlockEntity(type = BlockEntityType.COMMAND_BLOCK)
 public class CommandBlockBlockEntityTranslator extends BlockEntityTranslator implements RequiresBlockState {
     @Override
-    public void translateTag(NbtMapBuilder builder, CompoundTag tag, int blockState) {
+    public void translateTag(GeyserSession session, NbtMapBuilder builder, CompoundTag tag, int blockState) {
         if (tag == null || tag.size() < 5) {
             return; // These values aren't here
         }
@@ -43,7 +44,7 @@ public class CommandBlockBlockEntityTranslator extends BlockEntityTranslator imp
         // Java and Bedrock values
         builder.put("conditionMet", ((ByteTag) tag.get("conditionMet")).getValue());
         builder.put("auto", ((ByteTag) tag.get("auto")).getValue());
-        builder.put("CustomName", MessageTranslator.convertMessage(((StringTag) tag.get("CustomName")).getValue()));
+        builder.put("CustomName", MessageTranslator.convertMessage(((StringTag) tag.get("CustomName")).getValue(), session.getLocale()));
         builder.put("powered", ((ByteTag) tag.get("powered")).getValue());
         builder.put("Command", ((StringTag) tag.get("Command")).getValue());
         builder.put("SuccessCount", ((IntTag) tag.get("SuccessCount")).getValue());

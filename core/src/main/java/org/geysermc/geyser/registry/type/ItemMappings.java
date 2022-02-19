@@ -59,6 +59,10 @@ public class ItemMappings {
 
     IntList bucketIds;
     IntList boatIds;
+    /**
+     * Java IDs
+     */
+    IntList candleIds;
     IntList spawnEggIds;
     List<ItemData> carpets;
 

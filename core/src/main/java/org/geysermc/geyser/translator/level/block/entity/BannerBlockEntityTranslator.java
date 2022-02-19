@@ -29,13 +29,14 @@ import com.github.steveice10.mc.protocol.data.game.level.block.BlockEntityType;
 import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
 import com.github.steveice10.opennbt.tag.builtin.ListTag;
 import com.nukkitx.nbt.NbtMapBuilder;
+import org.geysermc.geyser.session.GeyserSession;
 import org.geysermc.geyser.translator.inventory.item.BannerTranslator;
 import org.geysermc.geyser.level.block.BlockStateValues;
 
 @BlockEntity(type = BlockEntityType.BANNER)
 public class BannerBlockEntityTranslator extends BlockEntityTranslator implements RequiresBlockState {
     @Override
-    public void translateTag(NbtMapBuilder builder, CompoundTag tag, int blockState) {
+    public void translateTag(GeyserSession session, NbtMapBuilder builder, CompoundTag tag, int blockState) {
         int bannerColor = BlockStateValues.getBannerColor(blockState);
         if (bannerColor != -1) {
             builder.put("Base", 15 - bannerColor);

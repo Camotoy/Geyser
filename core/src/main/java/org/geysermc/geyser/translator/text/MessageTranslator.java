@@ -146,10 +146,6 @@ public class MessageTranslator {
         return convertMessage(GSON_SERIALIZER.deserialize(message), locale);
     }
 
-    public static String convertMessage(String message) {
-        return convertMessage(message, GeyserLocale.getDefaultLocale());
-    }
-
     public static String convertMessage(Component message) {
         return convertMessage(message, GeyserLocale.getDefaultLocale());
     }

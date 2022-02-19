@@ -29,6 +29,7 @@ import com.github.steveice10.mc.protocol.data.game.level.block.BlockEntityType;
 import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
 import com.github.steveice10.opennbt.tag.builtin.Tag;
 import com.nukkitx.nbt.NbtMapBuilder;
+import org.geysermc.geyser.session.GeyserSession;
 import org.geysermc.geyser.translator.text.MessageTranslator;
 import org.geysermc.geyser.util.SignUtils;
 
@@ -65,7 +66,7 @@ public class SignBlockEntityTranslator extends BlockEntityTranslator {
     }
 
     @Override
-    public void translateTag(NbtMapBuilder builder, CompoundTag tag, int blockState) {
+    public void translateTag(GeyserSession session, NbtMapBuilder builder, CompoundTag tag, int blockState) {
         StringBuilder signText = new StringBuilder();
         for (int i = 0; i < 4; i++) {
             int currentLine = i + 1;

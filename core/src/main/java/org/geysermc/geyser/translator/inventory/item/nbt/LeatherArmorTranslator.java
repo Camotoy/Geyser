@@ -37,8 +37,7 @@ import java.util.List;
 
 @ItemRemapper
 public class LeatherArmorTranslator extends NbtItemStackTranslator {
-
-    private static final List<String> ITEMS = Arrays.asList("minecraft:leather_helmet", "minecraft:leather_chestplate",
+    public static final List<String> ITEMS = Arrays.asList("minecraft:leather_helmet", "minecraft:leather_chestplate",
             "minecraft:leather_leggings", "minecraft:leather_boots", "minecraft:leather_horse_armor");
 
     @Override

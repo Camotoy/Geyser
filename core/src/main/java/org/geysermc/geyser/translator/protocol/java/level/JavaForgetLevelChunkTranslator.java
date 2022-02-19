@@ -62,6 +62,8 @@ public class JavaForgetLevelChunkTranslator extends PacketTranslator<Clientbound
             }
         }
 
+        session.getCampfireCache().removeIf(position -> (position.getX() >> 4) == packet.getX() && (position.getZ() >> 4) == packet.getZ());
+
         ChunkUtils.sendEmptyChunk(session, packet.getX(), packet.getZ(), false);
     }
 }

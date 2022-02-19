@@ -28,6 +28,7 @@ package org.geysermc.geyser.session.cache;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundUpdateTagsPacket;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntLists;
+import org.geysermc.geyser.inventory.GeyserItemStack;
 import org.geysermc.geyser.registry.type.BlockMapping;
 import org.geysermc.geyser.registry.type.ItemMapping;
 import org.geysermc.geyser.session.GeyserSession;
@@ -54,8 +55,10 @@ public class TagCache {
 
     /* Items */
     private IntList axolotlTemptItems;
+    private IntList candles;
     private IntList flowers;
     private IntList foxFood;
+    private IntList lecternBooks;
     private IntList piglinLoved;
 
     public TagCache() {
@@ -79,8 +82,10 @@ public class TagCache {
 
         Map<String, int[]> itemTags = packet.getTags().get("minecraft:item");
         this.axolotlTemptItems = IntList.of(itemTags.get("minecraft:axolotl_tempt_items"));
+        this.candles = IntList.of(itemTags.get("minecraft:candles"));
         this.flowers = IntList.of(itemTags.get("minecraft:flowers"));
         this.foxFood = IntList.of(itemTags.get("minecraft:fox_food"));
+        this.lecternBooks = IntList.of(itemTags.get("minecraft:lectern_books"));
         this.piglinLoved = IntList.of(itemTags.get("minecraft:piglin_loved"));
 
         // Hack btw
@@ -105,13 +110,19 @@ public class TagCache {
         this.requiresDiamondTool = IntLists.emptyList();
 
         this.axolotlTemptItems = IntLists.emptyList();
+        this.candles = IntLists.emptyList();
         this.flowers = IntLists.emptyList();
         this.foxFood = IntLists.emptyList();
+        this.lecternBooks = IntLists.emptyList();
         this.piglinLoved = IntLists.emptyList();
     }
 
     public boolean isAxolotlTemptItem(ItemMapping itemMapping) {
         return axolotlTemptItems.contains(itemMapping.getJavaId());
+    }
+
+    public boolean isCandle(GeyserItemStack itemStack) {
+        return candles.contains(itemStack.getJavaId());
     }
 
     public boolean isFlower(ItemMapping mapping) {
@@ -120,6 +131,10 @@ public class TagCache {
 
     public boolean isFoxFood(ItemMapping mapping) {
         return foxFood.contains(mapping.getJavaId());
+    }
+
+    public boolean isLecternBook(GeyserItemStack itemStack) {
+        return lecternBooks.contains(itemStack.getJavaId());
     }
 
     public boolean shouldPiglinAdmire(ItemMapping mapping) {

@@ -23,25 +23,17 @@
  * @link https://github.com/GeyserMC/Geyser
  */
 
-package org.geysermc.geyser.translator.sound.block;
+package org.geysermc.geyser.registry.type.block;
 
-import com.nukkitx.math.vector.Vector3f;
-import com.nukkitx.protocol.bedrock.data.LevelEventType;
-import com.nukkitx.protocol.bedrock.packet.LevelEventPacket;
-import org.geysermc.geyser.session.GeyserSession;
-import org.geysermc.geyser.translator.sound.BlockSoundInteractionTranslator;
-import org.geysermc.geyser.translator.sound.SoundTranslator;
+import org.geysermc.geyser.level.physics.PistonBehavior;
+import org.geysermc.geyser.registry.type.BlockMapping;
+import org.geysermc.geyser.util.InteractResult;
+import org.jetbrains.annotations.Nullable;
 
-@SoundTranslator(blocks = {"door", "fence_gate"})
-public class DoorSoundInteractionTranslator implements BlockSoundInteractionTranslator {
+import javax.annotation.Nonnull;
 
-    @Override
-    public void translate(GeyserSession session, Vector3f position, String identifier) {
-        if (identifier.contains("iron")) return;
-        LevelEventPacket levelEventPacket = new LevelEventPacket();
-        levelEventPacket.setType(LevelEventType.SOUND_DOOR_OPEN);
-        levelEventPacket.setPosition(position);
-        levelEventPacket.setData(0);
-        session.sendUpstreamPacket(levelEventPacket);
-    }
+@FunctionalInterface
+public interface BlockSupplier {
+    BlockMapping create(String javaIdentifier, int javaBlockId, double hardness, boolean canBreakWithHand,
+                        int collisionIndex, @Nullable String pickItem, @Nonnull PistonBehavior pistonBehavior, boolean isBlockEntity, InteractResult defaultInteractResult);
 }

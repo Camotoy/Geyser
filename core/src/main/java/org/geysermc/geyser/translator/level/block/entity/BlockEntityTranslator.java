@@ -30,6 +30,7 @@ import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
 import com.github.steveice10.opennbt.tag.builtin.Tag;
 import com.nukkitx.nbt.NbtMap;
 import com.nukkitx.nbt.NbtMapBuilder;
+import org.geysermc.geyser.session.GeyserSession;
 import org.geysermc.geyser.util.BlockEntityUtils;
 
 /**
@@ -39,11 +40,11 @@ public abstract class BlockEntityTranslator {
     protected BlockEntityTranslator() {
     }
 
-    public abstract void translateTag(NbtMapBuilder builder, CompoundTag tag, int blockState);
+    public abstract void translateTag(GeyserSession session, NbtMapBuilder builder, CompoundTag tag, int blockState);
 
-    public NbtMap getBlockEntityTag(BlockEntityType type, int x, int y, int z, CompoundTag tag, int blockState) {
+    public NbtMap getBlockEntityTag(GeyserSession session, BlockEntityType type, int x, int y, int z, CompoundTag tag, int blockState) {
         NbtMapBuilder tagBuilder = getConstantBedrockTag(BlockEntityUtils.getBedrockBlockEntityId(type), x, y, z);
-        translateTag(tagBuilder, tag, blockState);
+        translateTag(session, tagBuilder, tag, blockState);
         return tagBuilder.build();
     }
 

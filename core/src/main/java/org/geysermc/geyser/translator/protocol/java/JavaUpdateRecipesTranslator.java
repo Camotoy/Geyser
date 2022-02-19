@@ -29,10 +29,7 @@ import com.github.steveice10.mc.protocol.data.game.entity.metadata.ItemStack;
 import com.github.steveice10.mc.protocol.data.game.recipe.Ingredient;
 import com.github.steveice10.mc.protocol.data.game.recipe.Recipe;
 import com.github.steveice10.mc.protocol.data.game.recipe.RecipeType;
-import com.github.steveice10.mc.protocol.data.game.recipe.data.ShapedRecipeData;
-import com.github.steveice10.mc.protocol.data.game.recipe.data.ShapelessRecipeData;
-import com.github.steveice10.mc.protocol.data.game.recipe.data.SmithingRecipeData;
-import com.github.steveice10.mc.protocol.data.game.recipe.data.StoneCuttingRecipeData;
+import com.github.steveice10.mc.protocol.data.game.recipe.data.*;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundUpdateRecipesPacket;
 import com.nukkitx.nbt.NbtMap;
 import com.nukkitx.protocol.bedrock.data.inventory.CraftingData;
@@ -84,6 +81,7 @@ public class JavaUpdateRecipesTranslator extends PacketTranslator<ClientboundUpd
         Int2ObjectMap<List<StoneCuttingRecipeData>> unsortedStonecutterData = new Int2ObjectOpenHashMap<>();
         CraftingDataPacket craftingDataPacket = new CraftingDataPacket();
         craftingDataPacket.setCleanRecipes(true);
+        session.getCampfireRecipes().clear();
         for (Recipe recipe : packet.getRecipes()) {
             switch (recipe.getType()) {
                 case CRAFTING_SHAPELESS -> {
@@ -151,6 +149,12 @@ public class JavaUpdateRecipesTranslator extends PacketTranslator<ClientboundUpd
                                     Arrays.asList(bedrockBase, bedrockAddition),
                                     Collections.singletonList(output), uuid, "smithing_table", 2, netId++));
                         }
+                    }
+                }
+                case CAMPFIRE_COOKING -> {
+                    CookedRecipeData recipeData = (CookedRecipeData) recipe.getData();
+                    for (ItemStack itemStack : recipeData.getIngredient().getOptions()) {
+                        session.getCampfireRecipes().add(itemStack.getId());
                     }
                 }
                 default -> {

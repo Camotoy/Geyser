@@ -28,32 +28,39 @@ package org.geysermc.geyser.translator.level.block.entity;
 import com.github.steveice10.mc.protocol.data.game.level.block.BlockEntityType;
 import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
 import com.github.steveice10.opennbt.tag.builtin.ListTag;
+import com.github.steveice10.opennbt.tag.builtin.Tag;
+import com.nukkitx.math.vector.Vector3i;
 import com.nukkitx.nbt.NbtMap;
 import com.nukkitx.nbt.NbtMapBuilder;
-import org.geysermc.geyser.network.MinecraftProtocol;
-import org.geysermc.geyser.registry.Registries;
 import org.geysermc.geyser.registry.type.ItemMapping;
+import org.geysermc.geyser.session.GeyserSession;
 
 @BlockEntity(type = BlockEntityType.CAMPFIRE)
 public class CampfireBlockEntityTranslator extends BlockEntityTranslator {
     @Override
-    public void translateTag(NbtMapBuilder builder, CompoundTag tag, int blockState) {
+    public void translateTag(GeyserSession session, NbtMapBuilder builder, CompoundTag tag, int blockState) {
         ListTag items = tag.get("Items");
-        int i = 1;
-        for (com.github.steveice10.opennbt.tag.builtin.Tag itemTag : items.getValue()) {
-            builder.put("Item" + i, getItem((CompoundTag) itemTag));
-            i++;
+        int i = 0;
+        for (Tag itemTag : items.getValue()) {
+            builder.put("Item" + ++i, getItem(session, (CompoundTag) itemTag));
+        }
+
+        Vector3i position = Vector3i.from((int) builder.get("x"), (int) builder.get("y"), (int) builder.get("z"));
+        if (i == 4) {
+            // Campfire is full
+            session.getCampfireCache().add(position);
+        } else {
+            session.getCampfireCache().remove(position);
         }
     }
 
-    protected NbtMap getItem(CompoundTag tag) {
-        // TODO: Version independent mappings
-        ItemMapping mapping = Registries.ITEMS.forVersion(MinecraftProtocol.DEFAULT_BEDROCK_CODEC.getProtocolVersion()).getMapping((String) tag.get("id").getValue());
+    protected NbtMap getItem(GeyserSession session, CompoundTag tag) {
+        ItemMapping mapping = session.getItemMappings().getMapping((String) tag.get("id").getValue());
         NbtMapBuilder tagBuilder = NbtMap.builder()
                 .putString("Name", mapping.getBedrockIdentifier())
                 .putByte("Count", (byte) tag.get("Count").getValue())
                 .putShort("Damage", (short) mapping.getBedrockData());
-        tagBuilder.put("tag", NbtMap.builder().build());
+        tagBuilder.put("tag", NbtMap.EMPTY);
         return tagBuilder.build();
     }
 }
