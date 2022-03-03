@@ -262,6 +262,44 @@ public class LoginEncryptionUtils {
                         }));
     }
 
+    /**
+     * Build a window that explains the user's credentials will be saved to the system.
+     */
+    public static void buildAndShowConsentWindow(GeyserSession session) {
+        session.sendForm(
+                SimpleForm.builder()
+                        .title("Notice")
+                        .content("Your account is listed to save your Java Edition account login " +
+                                "after you log out. This *can* be used to log in as your account without permission by anyone who has access to the files of the server. " +
+                                "Only proceed if you trust the owner of this Geyser instance.")
+                        .button("%gui.ok")
+                        .responseHandler((form, responseData) -> {
+                            SimpleFormResponse response = form.parseResponse(responseData);
+                            if (response.isCorrect()) {
+                                session.authenticateWithMicrosoftCode(true);
+                            } else {
+                                session.disconnect("Login denied.");
+                            }
+                        }));
+    }
+
+    public static void buildAndShowTokenExpiredWindow(GeyserSession session) {
+        session.sendForm(
+                SimpleForm.builder()
+                        .title("Token Expired")
+                        .content("Your Java Edition credentials have expired or are no longer active. " +
+                                "You must re-authenticate with Microsoft, and your credentials will be re-saved.")
+                        .button("%gui.ok")
+                        .responseHandler((form, responseData) -> {
+                            SimpleFormResponse response = form.parseResponse(responseData);
+                            if (response.isCorrect()) {
+                                session.authenticateWithMicrosoftCode(true);
+                            } else {
+                                session.disconnect("TODO");
+                            }
+                        }));
+    }
+
     public static void buildAndShowLoginDetailsWindow(GeyserSession session) {
         session.sendForm(
                 CustomForm.builder()
