@@ -422,39 +422,35 @@ public class GeyserImpl implements GeyserApi {
                 getLogger().warning("The 'userAuths' config section is now deprecated! Please migrate to the new 'saved-user-logins' config option: put link here to config file.");
             }
 
-            if (!config.getSavedUserLogins().isEmpty()) {
-                // May be written/read to on multiple threads from each GeyserSession as well as writing the config
-                savedRefreshTokens = new ConcurrentHashMap<>();
+            // May be written/read to on multiple threads from each GeyserSession as well as writing the config
+            savedRefreshTokens = new ConcurrentHashMap<>();
 
-                File tokensFile = bootstrap.getSavedUserLoginsFolder().resolve(Constants.SAVED_REFRESH_TOKEN_FILE).toFile();
-                if (tokensFile.exists()) {
-                    TypeReference<Map<String, String>> type = new TypeReference<>() { };
+            File tokensFile = bootstrap.getSavedUserLoginsFolder().resolve(Constants.SAVED_REFRESH_TOKEN_FILE).toFile();
+            if (tokensFile.exists()) {
+                TypeReference<Map<String, String>> type = new TypeReference<>() { };
 
-                    Map<String, String> refreshTokenFile = null;
-                    try {
-                        refreshTokenFile = JSON_MAPPER.readValue(tokensFile, type);
-                    } catch (IOException e) {
-                        logger.error("Cannot load saved user tokens!", e);
+                Map<String, String> refreshTokenFile = null;
+                try {
+                    refreshTokenFile = JSON_MAPPER.readValue(tokensFile, type);
+                } catch (IOException e) {
+                    logger.error("Cannot load saved user tokens!", e);
+                }
+                if (refreshTokenFile != null) {
+                    List<String> validUsers = config.getSavedUserLogins();
+                    boolean doWrite = false;
+                    for (Map.Entry<String, String> entry : refreshTokenFile.entrySet()) {
+                        String user = entry.getKey();
+                        if (!validUsers.contains(user)) {
+                            // Perform a write to this file to purge the now-unused name
+                            doWrite = true;
+                            continue;
+                        }
+                        savedRefreshTokens.put(user, entry.getValue());
                     }
-                    if (refreshTokenFile != null) {
-                        List<String> validUsers = config.getSavedUserLogins();
-                        boolean doWrite = false;
-                        for (Map.Entry<String, String> entry : refreshTokenFile.entrySet()) {
-                            String user = entry.getKey();
-                            if (!validUsers.contains(user)) {
-                                // Perform a write to this file to purge the now-unused name
-                                doWrite = true;
-                                continue;
-                            }
-                            savedRefreshTokens.put(user, entry.getValue());
-                        }
-                        if (doWrite) {
-                            scheduleRefreshTokensWrite();
-                        }
+                    if (doWrite) {
+                        scheduleRefreshTokensWrite();
                     }
                 }
-            } else {
-                savedRefreshTokens = null;
             }
         } else {
             savedRefreshTokens = null;
