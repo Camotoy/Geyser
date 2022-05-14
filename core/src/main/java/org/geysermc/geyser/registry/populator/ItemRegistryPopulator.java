@@ -27,6 +27,8 @@ package org.geysermc.geyser.registry.populator;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.MultimapBuilder;
 import com.nukkitx.nbt.NbtMap;
 import com.nukkitx.nbt.NbtMapBuilder;
 import com.nukkitx.nbt.NbtType;
@@ -38,11 +40,20 @@ import com.nukkitx.protocol.bedrock.packet.StartGamePacket;
 import com.nukkitx.protocol.bedrock.v475.Bedrock_v475;
 import com.nukkitx.protocol.bedrock.v486.Bedrock_v486;
 import com.nukkitx.protocol.bedrock.v503.Bedrock_v503;
-import it.unimi.dsi.fastutil.ints.*;
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.objects.*;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.geysermc.geyser.GeyserBootstrap;
 import org.geysermc.geyser.GeyserImpl;
+import org.geysermc.geyser.api.event.lifecycle.GeyserDefineCustomItemsEvent;
+import org.geysermc.geyser.api.item.custom.CustomItemData;
+import org.geysermc.geyser.api.item.custom.CustomItemOptions;
+import org.geysermc.geyser.api.item.custom.NonVanillaCustomItemData;
 import org.geysermc.geyser.inventory.item.StoredItemMappings;
+import org.geysermc.geyser.item.GeyserCustomMappingData;
 import org.geysermc.geyser.registry.BlockRegistries;
 import org.geysermc.geyser.registry.Registries;
 import org.geysermc.geyser.registry.type.*;
@@ -80,6 +91,57 @@ public class ItemRegistryPopulator {
             throw new AssertionError("Unable to load Java runtime item IDs", e);
         }
 
+        boolean customItemsAllowed = GeyserImpl.getInstance().getConfig().isAddNonBedrockItems();
+
+        Multimap<String, CustomItemData> customItems = MultimapBuilder.hashKeys().hashSetValues().build();
+        List<NonVanillaCustomItemData> nonVanillaCustomItems;
+        if (customItemsAllowed) {
+            // Load custom items from mappings files
+            GeyserImpl.getInstance().customItemManager().loadMappingsFromJson((key, item) -> {
+                if (CustomItemRegistryPopulator.initialCheck(key, item, items)) {
+                    customItems.get(key).add(item);
+                }
+            });
+
+            nonVanillaCustomItems = new ObjectArrayList<>();
+            GeyserImpl.getInstance().eventBus().fire(new GeyserDefineCustomItemsEvent() {
+                @Override
+                public boolean registerCustomItem(@NonNull String identifier, @NonNull CustomItemData customItemData) {
+                    if (CustomItemRegistryPopulator.initialCheck(identifier, customItemData, items)) {
+                        customItems.get(identifier).add(customItemData);
+                        return true;
+                    }
+                    return false;
+                }
+
+                @Override
+                public boolean registerCustomItem(@NonNull NonVanillaCustomItemData customItemData) {
+                    if (customItemData.javaId() < 0) {
+                        GeyserImpl.getInstance().getLogger().error("The custom item " + customItemData.identifier() +
+                                " cannot have a negative ID!");
+                        return false;
+                    }
+
+                    if (customItemData.identifier().startsWith("minecraft:")) {
+                        GeyserImpl.getInstance().getLogger().error("The custom item " + customItemData.identifier() +
+                                " is attempting to masquerade as a vanilla Minecraft item!");
+                        return false;
+                    }
+
+                    if (customItemData.javaId() < items.size()) {
+                        // Attempting to overwrite an item that already exists in the protocol
+                        GeyserImpl.getInstance().getLogger().error("The custom item " + customItemData.identifier() +
+                                " is attempting to overwrite a vanilla Minecraft item!");
+                        return false;
+                    }
+                    nonVanillaCustomItems.add(customItemData);
+                    return true;
+                }
+            });
+        } else {
+            nonVanillaCustomItems = Collections.emptyList();
+        }
+
         // We can reduce some operations as Java information is the same across all palette versions
         boolean firstMappingsPass = true;
         Int2IntMap dyeColors = new FixedInt2IntMap();
@@ -101,11 +163,20 @@ public class ItemRegistryPopulator {
                 throw new AssertionError("Unable to load Bedrock runtime item IDs", e);
             }
 
+            // Used for custom items
+            int nextFreeBedrockId = 0;
+            List<ComponentItemData> componentItemData = new ObjectArrayList<>();
+
             Map<String, StartGamePacket.ItemEntry> entries = new Object2ObjectOpenHashMap<>();
 
             for (PaletteItem entry : itemEntries) {
-                entries.put(entry.getName(), new StartGamePacket.ItemEntry(entry.getName(), (short) entry.getId()));
-                bedrockIdentifierToId.put(entry.getName(), entry.getId());
+                int id = entry.getId();
+                if (id >= nextFreeBedrockId) {
+                    nextFreeBedrockId = id + 1;
+                }
+
+                entries.put(entry.getName(), new StartGamePacket.ItemEntry(entry.getName(), (short) id));
+                bedrockIdentifierToId.put(entry.getName(), id);
             }
 
             Object2IntMap<String> bedrockBlockIdOverrides = new Object2IntOpenHashMap<>();
@@ -205,13 +276,12 @@ public class ItemRegistryPopulator {
 
             int itemIndex = 0;
             int javaFurnaceMinecartId = 0;
-            boolean usingFurnaceMinecart = GeyserImpl.getInstance().getConfig().isAddNonBedrockItems();
 
             Set<String> javaOnlyItems = new ObjectOpenHashSet<>();
             Collections.addAll(javaOnlyItems, "minecraft:spectral_arrow", "minecraft:debug_stick",
                     "minecraft:knowledge_book", "minecraft:tipped_arrow", "minecraft:trader_llama_spawn_egg",
                     "minecraft:bundle");
-            if (!usingFurnaceMinecart) {
+            if (!customItemsAllowed) {
                 javaOnlyItems.add("minecraft:furnace_minecart");
             }
             // Java-only items for this version
@@ -240,7 +310,7 @@ public class ItemRegistryPopulator {
                     }
                 }
 
-                if (usingFurnaceMinecart && javaIdentifier.equals("minecraft:furnace_minecart")) {
+                if (customItemsAllowed && javaIdentifier.equals("minecraft:furnace_minecart")) {
                     javaFurnaceMinecartId = itemIndex;
                     itemIndex++;
                     // Will be added later
@@ -394,21 +464,33 @@ public class ItemRegistryPopulator {
                     }
                 }
 
-                if (mappingItem.getArmorType() != null) {
-                    String armorTier = "";
-                    if (mappingItem.getArmorTier() != null) {
-                        armorTier = mappingItem.getArmorTier().intern();
-                    }
-                    mappingBuilder = mappingBuilder.armorType(mappingItem.getArmorType().intern())
-                            .armorTier(armorTier)
-                            .protectionValue(mappingItem.getProtectionValue());
-                }
-
                 if (javaOnlyItems.contains(javaIdentifier)) {
                     // These items don't exist on Bedrock, so set up a variable that indicates they should have custom names
                     mappingBuilder = mappingBuilder.translationString((bedrockBlockId != -1 ? "block." : "item.") + entry.getKey().replace(":", "."));
                     GeyserImpl.getInstance().getLogger().debug("Adding " + entry.getKey() + " as an item that needs to be translated.");
                 }
+
+                // Add the custom item properties, if applicable
+                Object2IntMap<CustomItemOptions> customItemOptions;
+                Collection<CustomItemData> customItemsToLoad = customItems.get(javaIdentifier);
+                if (customItemsAllowed && !customItemsToLoad.isEmpty()) {
+                    customItemOptions = new Object2IntOpenHashMap<>(customItemsToLoad.size());
+
+                    for (CustomItemData customItem : customItemsToLoad) {
+                        int customProtocolId = nextFreeBedrockId++;
+                        GeyserCustomMappingData.Mapping customMapping = CustomItemRegistryPopulator.registerCustomItem(
+                                mappingItem, customItem, customProtocolId
+                        );
+                        // StartGamePacket entry - needed for Bedrock to recognize the item through the protocol
+                        entries.put(customMapping.stringId(), customMapping.startGamePacketItemEntry());
+                        // ComponentItemData - used to register some custom properties
+                        componentItemData.add(customMapping.componentItemData());
+                        customItemOptions.put(customItem.customItemOptions(), customProtocolId);
+                    }
+                } else {
+                    customItemOptions = Object2IntMaps.emptyMap();
+                }
+                mappingBuilder.customItemOptions(customItemOptions);
 
                 ItemMapping mapping = mappingBuilder.build();
 
@@ -460,12 +542,12 @@ public class ItemRegistryPopulator {
                     .bedrockData(0)
                     .bedrockBlockId(-1)
                     .stackSize(1)
+                    .customItemOptions(Object2IntMaps.emptyMap())
                     .build();
 
-            ComponentItemData furnaceMinecartData = null;
-            if (usingFurnaceMinecart) {
+            if (customItemsAllowed) {
                 // Add the furnace minecart as a custom item
-                int furnaceMinecartId = mappings.size() + 1;
+                int furnaceMinecartId = nextFreeBedrockId++;
 
                 entries.put("geysermc:furnace_minecart", new StartGamePacket.ItemEntry("geysermc:furnace_minecart", (short) furnaceMinecartId, true));
 
@@ -480,7 +562,7 @@ public class ItemRegistryPopulator {
                         .build());
 
                 creativeItems.add(ItemData.builder()
-                        .netId(netId)
+                        .netId(netId++)
                         .id(furnaceMinecartId)
                         .count(1).build());
 
@@ -516,18 +598,34 @@ public class ItemRegistryPopulator {
 
                 componentBuilder.putCompound("item_properties", itemProperties.build());
                 builder.putCompound("components", componentBuilder.build());
-                furnaceMinecartData = new ComponentItemData("geysermc:furnace_minecart", builder.build());
-            }
+                componentItemData.add(new ComponentItemData("geysermc:furnace_minecart", builder.build()));
 
-            Int2ObjectMap<ItemMapping> newMappings = new Int2ObjectOpenHashMap<>();
-            for (int i = 0; i < mappings.size(); i++) {
-                newMappings.put(i, mappings.get(i));
+                // Register any completely custom items given to us
+                for (NonVanillaCustomItemData customItem : nonVanillaCustomItems) {
+                    int customItemId = nextFreeBedrockId++;
+                    NonVanillaItemRegistration registration = CustomItemRegistryPopulator.registerCustomItem(customItem, customItemId);
+
+                    componentItemData.add(registration.componentItemData());
+                    ItemMapping mapping = registration.mapping();
+                    while (mapping.getJavaId() > mappings.size()) {
+                        // Fill with empty to get to the correct size
+                        mappings.add(ItemMapping.AIR);
+                    }
+                    mappings.add(mapping);
+
+                    if (customItem.creativeGroup() != null || customItem.creativeCategory().isPresent()) {
+                        creativeItems.add(ItemData.builder()
+                                .id(customItemId)
+                                .netId(netId++)
+                                .count(1).build());
+                    }
+                }
             }
 
             ItemMappings itemMappings = ItemMappings.builder()
-                    .items(newMappings)
-                    .creativeItems(creativeItems)
-                    .itemEntries(new ArrayList<>(entries.values()))
+                    .items(mappings.toArray(new ItemMapping[0]))
+                    .creativeItems(creativeItems.toArray(new ItemData[0]))
+                    .itemEntries(List.copyOf(entries.values()))
                     .itemNames(itemNames.toArray(new String[0]))
                     .storedItems(new StoredItemMappings(identifierToMapping))
                     .javaOnlyItems(javaOnlyItems)
@@ -535,7 +633,7 @@ public class ItemRegistryPopulator {
                     .boatIds(boats)
                     .spawnEggIds(spawnEggs)
                     .carpets(carpets)
-                    .furnaceMinecartData(furnaceMinecartData)
+                    .componentItemData(componentItemData)
                     .lodestoneCompass(lodestoneEntry)
                     .customIdMappings(new Int2ObjectOpenHashMap<>())
                     .build();

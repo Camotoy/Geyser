@@ -47,7 +47,6 @@ import org.geysermc.geyser.util.InventoryUtils;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 import java.util.function.IntFunction;
 
 public class PlayerInventoryTranslator extends InventoryTranslator {
@@ -401,12 +400,12 @@ public class PlayerInventoryTranslator extends InventoryTranslator {
                     craftState = CraftState.RECIPE_ID;
 
                     int creativeId = creativeAction.getCreativeItemNetworkId() - 1;
-                    List<ItemData> creativeItems = session.getItemMappings().getCreativeItems();
-                    if (creativeId < 0 || creativeId >= creativeItems.size()) {
+                    ItemData[] creativeItems = session.getItemMappings().getCreativeItems();
+                    if (creativeId < 0 || creativeId >= creativeItems.length) {
                         return rejectRequest(request);
                     }
                     // Reference the creative items list we send to the client to know what it's asking of us
-                    ItemData creativeItem = creativeItems.get(creativeId);
+                    ItemData creativeItem = creativeItems[creativeId];
                     javaCreativeItem = ItemTranslator.translateToJava(creativeItem, session.getItemMappings());
                     break;
                 }

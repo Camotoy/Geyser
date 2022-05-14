@@ -23,55 +23,34 @@
  * @link https://github.com/GeyserMC/Geyser
  */
 
-package org.geysermc.geyser.api.util;
+package org.geysermc.geyser.api.event.lifecycle;
 
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.geysermc.geyser.api.event.Event;
+import org.geysermc.geyser.api.item.custom.CustomItemData;
+import org.geysermc.geyser.api.item.custom.NonVanillaCustomItemData;
 
 /**
- * This is a way to represent a boolean, but with a non set value added.
+ * Called on Geyser's startup when looking for custom items. Custom items must be registered through this event.
+ * <br>
+ * This event will not be called if the "add non-Bedrock items" setting is disabled in the Geyser config.
  */
-public enum OptionalBoolean {
+public abstract class GeyserDefineCustomItemsEvent implements Event {
     /**
-     * This is a way to represent a boolean, but with a non set value added. This class was inspired by adventure's version https://github.com/KyoriPowered/adventure/blob/main/4/api/src/main/java/net/kyori/adventure/util/TriState.java
-     */
-    NOT_PRESENT,
-
-    /**
-     * Describes a true value.
-     */
-    TRUE,
-
-    /**
-     * Describes a false value.
-     */
-    FALSE;
-
-    /**
-     * Converts the TriState to a boolean.
+     * Registers a custom item with a base Java item. This is used to register items with custom textures and properties
+     * based on NBT data.
      *
-     * @return the boolean value of the TriState
+     * @param identifier the base (java) item
+     * @param customItemData the custom item data to register
+     * @return if the item was registered
      */
-    public @Nullable Boolean toBoolean() {
-        return switch (this) {
-            case TRUE -> true;
-            case FALSE -> false;
-            default -> null;
-        };
-    }
+    public abstract boolean registerCustomItem(@NonNull String identifier, @NonNull CustomItemData customItemData);
 
     /**
-     * Creates a TriState from a boolean.
+     * Registers a custom item with no base item. This is used for mods.
      *
-     * @param value the boolean value
-     * @return the created TriState
+     * @param customItemData the custom item data to register
+     * @return if the item was registered
      */
-    public static OptionalBoolean fromBoolean(Boolean value) {
-        if (value == null) {
-            return NOT_PRESENT;
-        } else if (value) {
-            return TRUE;
-        } else {
-            return FALSE;
-        }
-    }
+    public abstract boolean registerCustomItem(@NonNull NonVanillaCustomItemData customItemData);
 }

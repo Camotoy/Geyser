@@ -39,19 +39,22 @@ import com.nukkitx.protocol.bedrock.data.inventory.CraftingData;
 import com.nukkitx.protocol.bedrock.data.inventory.ItemData;
 import com.nukkitx.protocol.bedrock.packet.CraftingDataPacket;
 import com.nukkitx.protocol.bedrock.v486.Bedrock_v486;
-import it.unimi.dsi.fastutil.ints.*;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import org.geysermc.geyser.inventory.recipe.GeyserRecipe;
 import org.geysermc.geyser.inventory.recipe.GeyserShapedRecipe;
 import org.geysermc.geyser.inventory.recipe.GeyserShapelessRecipe;
 import org.geysermc.geyser.inventory.recipe.GeyserStonecutterData;
-import org.geysermc.geyser.session.GeyserSession;
-import org.geysermc.geyser.translator.protocol.PacketTranslator;
-import org.geysermc.geyser.translator.protocol.Translator;
-import org.geysermc.geyser.translator.inventory.item.ItemTranslator;
 import org.geysermc.geyser.registry.Registries;
 import org.geysermc.geyser.registry.type.ItemMapping;
+import org.geysermc.geyser.session.GeyserSession;
+import org.geysermc.geyser.translator.inventory.item.ItemTranslator;
+import org.geysermc.geyser.translator.protocol.PacketTranslator;
+import org.geysermc.geyser.translator.protocol.Translator;
 import org.geysermc.geyser.util.InventoryUtils;
 
 import java.util.*;
@@ -230,7 +233,7 @@ public class JavaUpdateRecipesTranslator extends PacketTranslator<ClientboundUpd
                     GroupedItem groupedItem = entry.getKey();
                     int idCount = 0;
                     //not optimal
-                    for (ItemMapping mapping : session.getItemMappings().getItems().values()) {
+                    for (ItemMapping mapping : session.getItemMappings().getItems()) {
                         if (mapping.getBedrockId() == groupedItem.id) {
                             idCount++;
                         }

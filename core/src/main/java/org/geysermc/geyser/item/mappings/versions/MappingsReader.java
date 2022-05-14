@@ -31,6 +31,7 @@ import org.geysermc.geyser.item.GeyserCustomItemManager;
 import org.geysermc.geyser.item.exception.InvalidCustomMappingsFileException;
 
 import java.nio.file.Path;
+import java.util.function.BiConsumer;
 
 public abstract class MappingsReader {
     protected GeyserCustomItemManager customItemManager;
@@ -39,7 +40,7 @@ public abstract class MappingsReader {
         this.customItemManager = customItemManager;
     }
 
-    public abstract void readMappings(Path file, JsonNode mappingsRoot);
+    public abstract void readMappings(Path file, JsonNode mappingsRoot, BiConsumer<String, CustomItemData> consumer);
 
     public abstract CustomItemData readItemMappingEntry(JsonNode node) throws InvalidCustomMappingsFileException;
 }

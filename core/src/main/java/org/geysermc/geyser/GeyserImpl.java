@@ -55,14 +55,15 @@ import org.geysermc.geyser.api.event.EventBus;
 import org.geysermc.geyser.api.event.lifecycle.GeyserPostInitializeEvent;
 import org.geysermc.geyser.api.event.lifecycle.GeyserPreInitializeEvent;
 import org.geysermc.geyser.api.event.lifecycle.GeyserShutdownEvent;
+import org.geysermc.geyser.api.network.AuthType;
 import org.geysermc.geyser.api.network.BedrockListener;
 import org.geysermc.geyser.api.network.RemoteServer;
 import org.geysermc.geyser.command.GeyserCommandManager;
 import org.geysermc.geyser.configuration.GeyserConfiguration;
-import org.geysermc.geyser.item.GeyserCustomItemManager;
 import org.geysermc.geyser.entity.EntityDefinitions;
 import org.geysermc.geyser.event.GeyserEventBus;
 import org.geysermc.geyser.extension.GeyserExtensionManager;
+import org.geysermc.geyser.item.GeyserCustomItemManager;
 import org.geysermc.geyser.level.WorldManager;
 import org.geysermc.geyser.network.BedrockListenerImpl;
 import org.geysermc.geyser.network.ConnectorServerEventHandler;
@@ -76,7 +77,6 @@ import org.geysermc.geyser.scoreboard.ScoreboardUpdater;
 import org.geysermc.geyser.session.GeyserSession;
 import org.geysermc.geyser.session.PendingMicrosoftAuthentication;
 import org.geysermc.geyser.session.SessionManager;
-import org.geysermc.geyser.api.network.AuthType;
 import org.geysermc.geyser.skin.FloodgateSkinUploader;
 import org.geysermc.geyser.skin.SkinProvider;
 import org.geysermc.geyser.text.GeyserLocale;
@@ -145,8 +145,6 @@ public class GeyserImpl implements GeyserApi {
     private final PlatformType platformType;
     private final GeyserBootstrap bootstrap;
 
-    private boolean initialized;
-
     private final EventBus eventBus;
     private final GeyserExtensionManager extensionManager;
     private final GeyserCustomItemManager customItemManager;
@@ -165,7 +163,6 @@ public class GeyserImpl implements GeyserApi {
 
     private GeyserImpl(PlatformType platformType, GeyserBootstrap bootstrap) {
         instance = this;
-        initialized = false;
 
         Geyser.set(this);
 
@@ -183,13 +180,8 @@ public class GeyserImpl implements GeyserApi {
         logger.info("");
         logger.info("******************************************");
 
-        /* Initialize registries */
-        Registries.init();
-        BlockRegistries.init();
-
         /* Initialize custom model data manager */
         this.customItemManager = new GeyserCustomItemManager();
-        this.customItemManager.loadMappingsFromJson();
 
         /* Initialize event bus */
         this.eventBus = new GeyserEventBus();
@@ -201,13 +193,15 @@ public class GeyserImpl implements GeyserApi {
         this.extensionManager.enablePreInitializeExtensions();
         this.eventBus.fire(new GeyserPreInitializeEvent(this.extensionManager, this.eventBus));
 
+        /* Initialize registries */
+        Registries.init();
+        BlockRegistries.init();
+
         /* Initialize translators */
         EntityDefinitions.init();
         ItemTranslator.init();
         MessageTranslator.init();
         MinecraftLocale.init();
-
-        initialized = true;
 
         start();
 
@@ -569,10 +563,6 @@ public class GeyserImpl implements GeyserApi {
     public void reload() {
         shutdown();
         bootstrap.onEnable();
-    }
-
-    public boolean isInitialized() {
-        return this.initialized;
     }
 
     /**
