@@ -156,10 +156,11 @@ public class GeyserImpl implements GeyserApi {
         logger.info("");
         logger.info("******************************************");
 
-        /* Initialize translators and registries */
+        /* Initialize registries */
         BlockRegistries.init();
         Registries.init();
 
+        /* Initialize translators */
         EntityDefinitions.init();
         ItemTranslator.init();
         MessageTranslator.init();
@@ -528,6 +529,11 @@ public class GeyserImpl implements GeyserApi {
     public boolean productionEnvironment() {
         //noinspection ConstantConditions - changes in production
         return !"DEV".equals(GeyserImpl.VERSION);
+    }
+
+    @Override
+    public <R extends T, T> @NonNull R provider(@NonNull Class<T> apiClass, @Nullable Object... args) {
+        return (R) Registries.PROVIDERS.get(apiClass).create(args);
     }
 
     public static GeyserImpl start(PlatformType platformType, GeyserBootstrap bootstrap) {

@@ -27,6 +27,7 @@ package org.geysermc.geyser.api;
 
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
+import org.geysermc.api.Geyser;
 import org.geysermc.api.GeyserApiBase;
 import org.geysermc.geyser.api.connection.GeyserConnection;
 
@@ -78,4 +79,24 @@ public interface GeyserApi extends GeyserApiBase {
      */
     @NonNull
     List<? extends GeyserConnection> onlineConnections();
+
+    /**
+     * Provides an implementation for the specified API type.
+     *
+     * @param apiClass the builder class
+     * @param <R> the implementation type
+     * @param <T> the API type
+     * @return the builder instance
+     */
+    @NonNull
+    <R extends T, T> R provider(@NonNull Class<T> apiClass, @Nullable Object... args);
+
+    /**
+     * Gets the current {@link GeyserApiBase} instance.
+     *
+     * @return the current geyser api instance
+     */
+    static GeyserApi api() {
+        return Geyser.api(GeyserApi.class);
+    }
 }
