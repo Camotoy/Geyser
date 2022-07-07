@@ -38,7 +38,10 @@ import com.nukkitx.math.vector.Vector3f;
 import com.nukkitx.math.vector.Vector3i;
 import com.nukkitx.protocol.bedrock.data.LevelEventType;
 import com.nukkitx.protocol.bedrock.data.inventory.*;
-import com.nukkitx.protocol.bedrock.packet.*;
+import com.nukkitx.protocol.bedrock.packet.ContainerOpenPacket;
+import com.nukkitx.protocol.bedrock.packet.InventoryTransactionPacket;
+import com.nukkitx.protocol.bedrock.packet.LevelEventPacket;
+import com.nukkitx.protocol.bedrock.packet.UpdateBlockPacket;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMaps;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -385,6 +388,15 @@ public class BedrockInventoryTransactionTranslator extends PacketTranslator<Inve
                         int blockState = session.getGameMode() == GameMode.CREATIVE ?
                                 session.getGeyser().getWorldManager().getBlockAt(session, packet.getBlockPosition()) : session.getBreakingBlock();
 
+                        if (blockState != -1) {
+                            session.getWorldCache().addServerCorrectBlockState(packet.getBlockPosition(), blockState);
+                        } else {
+                            blockState = BlockStateValues.JAVA_AIR_ID;
+                            // Client will desync here anyway
+                            session.getWorldCache().addServerCorrectBlockState(packet.getBlockPosition(),
+                                    session.getGeyser().getWorldManager().getBlockAt(session, packet.getBlockPosition()));
+                        }
+
                         session.setLastBlockPlacedId(null);
                         session.setLastBlockPlacePosition(null);
 
@@ -411,7 +423,7 @@ public class BedrockInventoryTransactionTranslator extends PacketTranslator<Inve
                         blockBreakPacket.setPosition(packet.getBlockPosition().toFloat());
                         blockBreakPacket.setData(session.getBlockMappings().getBedrockBlockId(blockState));
                         session.sendUpstreamPacket(blockBreakPacket);
-                        session.setBreakingBlock(BlockStateValues.JAVA_AIR_ID);
+                        session.setBreakingBlock(-1);
 
                         Entity itemFrameEntity = ItemFrameEntity.getItemFrameEntity(session, packet.getBlockPosition());
                         if (itemFrameEntity != null) {

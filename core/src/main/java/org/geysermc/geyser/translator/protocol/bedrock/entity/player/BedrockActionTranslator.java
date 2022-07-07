@@ -41,7 +41,6 @@ import com.nukkitx.protocol.bedrock.packet.*;
 import org.geysermc.geyser.entity.type.Entity;
 import org.geysermc.geyser.entity.type.ItemFrameEntity;
 import org.geysermc.geyser.entity.type.player.SessionPlayerEntity;
-import org.geysermc.geyser.level.block.BlockStateValues;
 import org.geysermc.geyser.registry.BlockRegistries;
 import org.geysermc.geyser.session.GeyserSession;
 import org.geysermc.geyser.translator.protocol.PacketTranslator;
@@ -170,10 +169,15 @@ public class BedrockActionTranslator extends PacketTranslator<PlayerActionPacket
                 if (session.getGameMode() == GameMode.CREATIVE) {
                     break;
                 }
+                int breakingBlock = session.getBreakingBlock();
+                if (breakingBlock == -1) {
+                    break;
+                }
+
                 Vector3f vectorFloat = vector.toFloat();
                 LevelEventPacket continueBreakPacket = new LevelEventPacket();
                 continueBreakPacket.setType(LevelEventType.PARTICLE_CRACK_BLOCK);
-                continueBreakPacket.setData((session.getBlockMappings().getBedrockBlockId(session.getBreakingBlock())) | (packet.getFace() << 24));
+                continueBreakPacket.setData((session.getBlockMappings().getBedrockBlockId(breakingBlock)) | (packet.getFace() << 24));
                 continueBreakPacket.setPosition(vectorFloat);
                 session.sendUpstreamPacket(continueBreakPacket);
 
@@ -181,7 +185,7 @@ public class BedrockActionTranslator extends PacketTranslator<PlayerActionPacket
                 LevelEventPacket updateBreak = new LevelEventPacket();
                 updateBreak.setType(LevelEventType.BLOCK_UPDATE_BREAK);
                 updateBreak.setPosition(vectorFloat);
-                double breakTime = BlockUtils.getSessionBreakTime(session, BlockRegistries.JAVA_BLOCKS.get(session.getBreakingBlock())) * 20;
+                double breakTime = BlockUtils.getSessionBreakTime(session, BlockRegistries.JAVA_BLOCKS.get(breakingBlock)) * 20;
                 updateBreak.setData((int) (65535 / breakTime));
                 session.sendUpstreamPacket(updateBreak);
                 break;
@@ -204,7 +208,7 @@ public class BedrockActionTranslator extends PacketTranslator<PlayerActionPacket
                 stopBreak.setType(LevelEventType.BLOCK_STOP_BREAK);
                 stopBreak.setPosition(vector.toFloat());
                 stopBreak.setData(0);
-                session.setBreakingBlock(BlockStateValues.JAVA_AIR_ID);
+                session.setBreakingBlock(-1);
                 session.sendUpstreamPacket(stopBreak);
                 break;
             case STOP_BREAK:

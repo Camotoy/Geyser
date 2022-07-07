@@ -1687,7 +1687,7 @@ public class GeyserSession implements GeyserConnection, CommandSender {
     }
 
     public int getNextSequence() {
-        return 0;
+        return worldCache.nextPredictionSequence();
     }
 
     /**
