@@ -25,10 +25,14 @@
 
 package org.geysermc.geyser.platform.bungeecord.command;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.bungeecord.BungeeComponentSerializer;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import org.geysermc.geyser.command.CommandSender;
 import org.geysermc.geyser.text.GeyserLocale;
+
+import java.util.Locale;
 
 public class BungeeCommandSender implements CommandSender {
 
@@ -51,6 +55,11 @@ public class BungeeCommandSender implements CommandSender {
     }
 
     @Override
+    public void sendMessage(Component message) {
+        handle.sendMessage(BungeeComponentSerializer.get().serialize(message));
+    }
+
+    @Override
     public boolean isConsole() {
         return !(handle instanceof ProxiedPlayer);
     }
@@ -58,8 +67,11 @@ public class BungeeCommandSender implements CommandSender {
     @Override
     public String getLocale() {
         if (handle instanceof ProxiedPlayer player) {
-            String locale = player.getLocale().getLanguage() + "_" + player.getLocale().getCountry();
-            return GeyserLocale.formatLocale(locale);
+            Locale locale = player.getLocale();
+            if (locale != null) {
+                // Locale can be null early on in the conneciton
+                return GeyserLocale.formatLocale(locale.getLanguage() + "_" + locale.getCountry());
+            }
         }
         return GeyserLocale.getDefaultLocale();
     }
