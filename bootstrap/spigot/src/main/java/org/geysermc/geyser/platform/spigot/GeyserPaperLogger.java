@@ -25,9 +25,9 @@
 
 package org.geysermc.geyser.platform.spigot;
 
-import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import org.bukkit.plugin.Plugin;
+import org.geysermc.geyser.shaded.kyori.adventure.text.Component;
 
 import java.util.logging.Logger;
 
@@ -44,8 +44,7 @@ public final class GeyserPaperLogger extends GeyserSpigotLogger {
      */
     @Override
     public void sendMessage(Component message) {
-        // Done like this so the native component object field isn't relocated
-        componentLogger.info("{}", PaperAdventure.toNativeComponent(message));
+        componentLogger.info(PaperAdventure.toNativeComponent(message));
     }
 
     static boolean supported() {

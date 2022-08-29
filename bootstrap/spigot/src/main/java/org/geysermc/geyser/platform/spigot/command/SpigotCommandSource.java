@@ -25,13 +25,13 @@
 
 package org.geysermc.geyser.platform.spigot.command;
 
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.bungeecord.BungeeComponentSerializer;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.Player;
 import org.geysermc.geyser.GeyserImpl;
 import org.geysermc.geyser.command.GeyserCommandSource;
 import org.geysermc.geyser.platform.spigot.PaperAdventure;
+import org.geysermc.geyser.shaded.kyori.adventure.text.Component;
+import org.geysermc.geyser.shaded.kyori.adventure.text.serializer.bungeecord.BungeeComponentSerializer;
 import org.geysermc.geyser.text.GeyserLocale;
 
 import java.lang.reflect.InvocationTargetException;

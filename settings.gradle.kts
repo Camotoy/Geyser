@@ -75,6 +75,7 @@ include(":standalone")
 include(":velocity")
 include(":common")
 include(":core")
+include(":core-with-relocated-adventure")
 
 // Specify project dirs
 project(":api").projectDir = file("api/base")
@@ -84,3 +85,4 @@ project(":spigot").projectDir = file("bootstrap/spigot")
 project(":sponge").projectDir = file("bootstrap/sponge")
 project(":standalone").projectDir = file("bootstrap/standalone")
 project(":velocity").projectDir = file("bootstrap/velocity")
+project(":core-with-relocated-adventure").projectDir = file("bootstrap/spigot/core-with-relocated-adventure")

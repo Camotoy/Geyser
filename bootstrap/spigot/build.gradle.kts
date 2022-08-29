@@ -4,14 +4,12 @@ val adaptersVersion = "1.5-SNAPSHOT"
 val commodoreVersion = "2.2"
 
 dependencies {
-    api(projects.core)
+    api(projects.coreWithRelocatedAdventure) {
+        targetConfiguration = "shadow";
+    }
 
     implementation("org.geysermc.geyser.adapters", "spigot-all", adaptersVersion)
-
     implementation("me.lucko", "commodore", commodoreVersion)
-
-    implementation("net.kyori", "adventure-text-serializer-bungeecord", Versions.adventurePlatformVersion)
-    
     // Both paper-api and paper-mojangapi only provide Java 17 versions for 1.19
     compileOnly("io.papermc.paper", "paper-api", paperVersion) {
         attributes {
@@ -27,8 +25,6 @@ dependencies {
 
 platformRelocate("it.unimi.dsi.fastutil")
 platformRelocate("com.fasterxml.jackson")
-// Relocate net.kyori but exclude the component logger
-platformRelocate("net.kyori", "net.kyori.adventure.text.logger.slf4j.ComponentLogger")
 platformRelocate("org.objectweb.asm")
 platformRelocate("me.lucko.commodore")
 platformRelocate("io.netty.channel.kqueue")
