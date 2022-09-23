@@ -31,7 +31,6 @@ import com.nukkitx.protocol.bedrock.packet.SetTitlePacket;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import lombok.Getter;
 import lombok.Setter;
-import org.geysermc.geyser.registry.BlockRegistries;
 import org.geysermc.geyser.scoreboard.Scoreboard;
 import org.geysermc.geyser.scoreboard.ScoreboardUpdater.ScoreboardSession;
 import org.geysermc.geyser.session.GeyserSession;
@@ -135,6 +134,10 @@ public final class WorldCache {
     /* Code to support the prediction structure introduced in Java Edition 1.19.0
     Blocks can be rolled back if invalid, but this requires some client-side information storage. */
 
+    /**
+     * This does not need to be called for all player action packets (as of 1.19.2) and can be set to 0 if blocks aren't
+     * changed in the action.
+     */
     public int nextPredictionSequence() {
         return ++currentSequence;
     }
@@ -149,16 +152,16 @@ public final class WorldCache {
             // meaning we'd send two block updates after (ChunkUtils.updateBlockClientSide in endPredictionsUpTo
             // and the packet updating from the client)
             this.unverifiedPredictions.compute(position, ($, serverVerifiedState) -> serverVerifiedState == null
-                    ? new ServerVerifiedState(currentSequence, blockState) : serverVerifiedState.setData(currentSequence, blockState));
+                    ? new ServerVerifiedState(currentSequence, blockState) : serverVerifiedState.setSequence(currentSequence));
         }
     }
 
-    public void updateServerCorrectBlockState(Vector3i position) {
-        if (this.unverifiedPredictions.isEmpty()) {
-            return;
+    public void updateServerCorrectBlockState(Vector3i position, int blockState) {
+        if (!this.unverifiedPredictions.isEmpty()) {
+            this.unverifiedPredictions.remove(position);
         }
 
-        this.unverifiedPredictions.remove(position);
+        ChunkUtils.updateBlock(session, blockState, position);
     }
 
     public void endPredictionsUpTo(int sequence) {
@@ -171,26 +174,32 @@ public final class WorldCache {
             Map.Entry<Vector3i, ServerVerifiedState> entry = it.next();
             ServerVerifiedState serverVerifiedState = entry.getValue();
             if (serverVerifiedState.sequence <= sequence) {
+                System.out.println("do be do be do ba");
                 // This block may be out of sync with the server
                 // In 1.19.0 Java, you can verify this by trying to mine in spawn protection
-                ChunkUtils.updateBlockClientSide(session, serverVerifiedState.blockState, entry.getKey());
+                Vector3i position = entry.getKey();
+                int blockState = serverVerifiedState.blockState;
+                if (blockState == -1) {
+                    // We're not sure what this block was; poll from the cache
+                    blockState = session.getGeyser().getWorldManager().getBlockAt(session, position);
+                }
+                //ChunkUtils.updateBlockClientSide(session, blockState, position);
                 it.remove();
             }
         }
     }
 
-    private static class ServerVerifiedState {
+    private static final class ServerVerifiedState {
         private int sequence;
-        private int blockState;
+        private final int blockState;
 
         ServerVerifiedState(int sequence, int blockState) {
             this.sequence = sequence;
             this.blockState = blockState;
         }
 
-        ServerVerifiedState setData(int sequence, int blockState) {
+        ServerVerifiedState setSequence(int sequence) {
             this.sequence = sequence;
-            this.blockState = blockState;
             return this;
         }
 
