@@ -34,7 +34,7 @@ import com.nukkitx.nbt.NbtType;
 import com.nukkitx.protocol.bedrock.data.inventory.ItemData;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.ObjectIntPair;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.geysermc.geyser.GeyserImpl;
@@ -554,77 +554,38 @@ public abstract class ItemTranslator {
         if (nbt == null) {
             return -1;
         }
-        Object2IntMap<CustomItemOptions> customMappings = mapping.getCustomItemOptions();
+        List<ObjectIntPair<CustomItemOptions>> customMappings = mapping.getCustomItemOptions();
         if (customMappings.isEmpty()) {
             return -1;
         }
         int customModelData = nbt.get("CustomModelData") instanceof IntTag customModelDataTag ? customModelDataTag.getValue() : 0;
         TriState unbreakable = TriState.fromBoolean(nbt.get("Unbreakable") instanceof ByteTag unbreakableTag && unbreakableTag.getValue() == 1);
         int damage = nbt.get("Damage") instanceof IntTag damageTag ? damageTag.getValue() : 0;
-        for (Object2IntMap.Entry<CustomItemOptions> mappingTypes : customMappings.object2IntEntrySet()) {
-            CustomItemOptions options = mappingTypes.getKey();
+
+        for (ObjectIntPair<CustomItemOptions> mappingTypes : customMappings) {
+            CustomItemOptions options = mappingTypes.key();
+
+            // Code note: there may be two or more conditions that a custom item must follow, hence the "continues"
+            // here with the return at the end.
 
             TriState unbreakableOption = options.unbreakable();
-            if (unbreakableOption == unbreakable) { // Implementation note: if the option is NOT_SET then this comparison will always be false because of how the item unbreaking TriState is created
-                return mappingTypes.getIntValue();
+            if (unbreakableOption == TriState.FALSE && unbreakableOption != unbreakable) {
+                continue;
             }
 
             OptionalInt customModelDataOption = options.customModelData();
-            if (customModelDataOption.isPresent() && customModelDataOption.getAsInt() == customModelData) {
-                return mappingTypes.getIntValue();
+            if (customModelDataOption.isPresent() && customModelData < customModelDataOption.getAsInt()) {
+                continue;
             }
 
             OptionalInt damagePredicate = options.damagePredicate();
-            if (damagePredicate.isPresent() && damagePredicate.getAsInt() == damage) {
-                return mappingTypes.getIntValue();
+            if (damagePredicate.isPresent() && damage < damagePredicate.getAsInt()) {
+                continue;
             }
+
+            return mappingTypes.valueInt();
         }
         return -1;
-    }
-
-    /**
-     * Checks if an {@link ItemStack} is equal to another item stack
-     *
-     * @param itemStack the item stack to check
-     * @param equalsItemStack the item stack to check if equal to
-     * @param checkAmount if the amount should be taken into account
-     * @param trueIfAmountIsGreater if this should return true if the amount of the
-     *                              first item stack is greater than that of the second
-     * @param checkNbt if NBT data should be checked
-     * @return if an item stack is equal to another item stack
-     */
-    public boolean equals(ItemStack itemStack, ItemStack equalsItemStack, boolean checkAmount, boolean trueIfAmountIsGreater, boolean checkNbt) {
-        if (itemStack.getId() != equalsItemStack.getId()) {
-            return false;
-        }
-        if (checkAmount) {
-            if (trueIfAmountIsGreater) {
-                if (itemStack.getAmount() < equalsItemStack.getAmount()) {
-                    return false;
-                }
-            } else {
-                if (itemStack.getAmount() != equalsItemStack.getAmount()) {
-                    return false;
-                }
-            }
-        }
-
-        if (!checkNbt) {
-            return true;
-        }
-        if ((itemStack.getNbt() == null || itemStack.getNbt().isEmpty()) && (equalsItemStack.getNbt() != null && !equalsItemStack.getNbt().isEmpty())) {
-            return false;
-        }
-
-        if ((itemStack.getNbt() != null && !itemStack.getNbt().isEmpty() && (equalsItemStack.getNbt() == null || !equalsItemStack.getNbt().isEmpty()))) {
-            return false;
-        }
-
-        if (itemStack.getNbt() != null && equalsItemStack.getNbt() != null) {
-            return itemStack.getNbt().equals(equalsItemStack.getNbt());
-        }
-
-        return true;
     }
 
 }
