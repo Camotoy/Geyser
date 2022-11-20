@@ -27,6 +27,7 @@ package org.geysermc.geyser.registry.populator;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.github.steveice10.mc.protocol.data.game.entity.EquipmentSlot;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.MultimapBuilder;
 import com.nukkitx.nbt.NbtMap;
@@ -470,6 +471,16 @@ public class ItemRegistryPopulator {
                     GeyserImpl.getInstance().getLogger().debug("Adding " + entry.getKey() + " as an item that needs to be translated.");
                 }
 
+                // TODO use Mojmap for MCProtocolLib
+                mappingBuilder.equipmentSlot(switch (mappingItem.getEquipmentSlot()) {
+                    case "OFFHAND" -> EquipmentSlot.OFF_HAND;
+                    case "FEET" -> EquipmentSlot.BOOTS;
+                    case "LEGS" -> EquipmentSlot.LEGGINGS;
+                    case "CHEST" -> EquipmentSlot.CHESTPLATE;
+                    case "HEAD" -> EquipmentSlot.HELMET;
+                    default -> EquipmentSlot.MAIN_HAND;
+                });
+
                 // Add the custom item properties, if applicable
                 List<ObjectIntPair<CustomItemOptions>> customItemOptions;
                 Collection<CustomItemData> customItemsToLoad = customItems.get(javaIdentifier);
@@ -557,6 +568,7 @@ public class ItemRegistryPopulator {
                     .bedrockBlockId(-1)
                     .stackSize(1)
                     .customItemOptions(Collections.emptyList())
+                    .equipmentSlot(EquipmentSlot.MAIN_HAND)
                     .build();
 
             if (customItemsAllowed) {
@@ -574,6 +586,7 @@ public class ItemRegistryPopulator {
                         .bedrockBlockId(-1)
                         .stackSize(1)
                         .customItemOptions(Collections.emptyList()) // TODO check for custom items with furnace minecart
+                        .equipmentSlot(EquipmentSlot.MAIN_HAND)
                         .build());
 
                 creativeItems.add(ItemData.builder()

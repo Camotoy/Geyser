@@ -25,6 +25,7 @@
 
 package org.geysermc.geyser.registry.type;
 
+import com.github.steveice10.mc.protocol.data.game.entity.EquipmentSlot;
 import it.unimi.dsi.fastutil.objects.ObjectIntPair;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -42,7 +43,7 @@ import java.util.Set;
 public class ItemMapping {
     public static final ItemMapping AIR = new ItemMapping("minecraft:air", "minecraft:air", 0, 0, 0,
             0, // Air is never sent in full over the network for this to serialize.
-            64, null, null, null, Collections.emptyList(), 0, null, false);
+            64, null, null, EquipmentSlot.MAIN_HAND, null, Collections.emptyList(), 0, null, false);
 
     String javaIdentifier;
     String bedrockIdentifier;
@@ -59,6 +60,9 @@ public class ItemMapping {
 
     String toolType;
     String toolTier;
+
+    @NonNull
+    EquipmentSlot equipmentSlot;
 
     String translationString;
 

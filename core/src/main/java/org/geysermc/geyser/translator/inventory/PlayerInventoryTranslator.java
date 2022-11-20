@@ -25,6 +25,7 @@
 
 package org.geysermc.geyser.translator.inventory;
 
+import com.github.steveice10.mc.protocol.data.game.entity.EquipmentSlot;
 import com.github.steveice10.mc.protocol.data.game.entity.metadata.ItemStack;
 import com.github.steveice10.mc.protocol.data.game.entity.player.GameMode;
 import com.github.steveice10.mc.protocol.data.game.inventory.ContainerType;
@@ -39,6 +40,7 @@ import it.unimi.dsi.fastutil.ints.IntIterator;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import org.geysermc.geyser.inventory.*;
+import org.geysermc.geyser.registry.type.ItemMapping;
 import org.geysermc.geyser.session.GeyserSession;
 import org.geysermc.geyser.skin.FakeHeadProvider;
 import org.geysermc.geyser.text.GeyserLocale;
@@ -223,6 +225,27 @@ public class PlayerInventoryTranslator extends InventoryTranslator {
         if (javaSlot == 0)
             return SlotType.OUTPUT;
         return SlotType.NORMAL;
+    }
+
+    @Override
+    protected boolean shouldRejectItemPlace(GeyserSession session, Inventory inventory, ContainerSlotType bedrockSourceContainer,
+                                            int javaSourceSlot, ContainerSlotType bedrockDestinationContainer, int javaDestinationSlot) {
+        if (javaDestinationSlot >= 5 && javaDestinationSlot <= 8) {
+            GeyserItemStack itemStack = javaSourceSlot == -1 ? session.getPlayerInventory().getCursor() : inventory.getItem(javaSourceSlot);
+            if (itemStack.isEmpty()) {
+                return false;
+            }
+            ItemMapping mapping = itemStack.getMapping(session);
+            EquipmentSlot equipmentSlot = switch (javaDestinationSlot) {
+                case 5 -> EquipmentSlot.HELMET;
+                case 6 -> EquipmentSlot.CHESTPLATE;
+                case 7 -> EquipmentSlot.LEGGINGS;
+                case 8 -> EquipmentSlot.BOOTS;
+                default -> throw new IllegalStateException();
+            };
+            return equipmentSlot != mapping.getEquipmentSlot();
+        }
+        return false;
     }
 
     @Override
