@@ -27,6 +27,7 @@ package org.geysermc.geyser.platform.spigot.command;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.bungeecord.BungeeComponentSerializer;
+import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.Player;
 import org.geysermc.geyser.command.GeyserCommandSource;
@@ -80,5 +81,9 @@ public class SpigotCommandSource implements GeyserCommandSource {
     @Override
     public boolean hasPermission(String permission) {
         return handle.hasPermission(permission);
+    }
+
+    public CommandSender getHandle() {
+        return handle;
     }
 }

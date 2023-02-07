@@ -25,6 +25,9 @@
 
 package org.geysermc.geyser.platform.spigot;
 
+import cloud.commandframework.CommandManager;
+import cloud.commandframework.execution.CommandExecutionCoordinator;
+import cloud.commandframework.paper.PaperCommandManager;
 import com.viaversion.viaversion.api.Via;
 import com.viaversion.viaversion.api.data.MappingData;
 import com.viaversion.viaversion.api.protocol.ProtocolPathEntry;
@@ -51,6 +54,7 @@ import org.geysermc.geyser.api.command.Command;
 import org.geysermc.geyser.api.extension.Extension;
 import org.geysermc.geyser.api.network.AuthType;
 import org.geysermc.geyser.command.GeyserCommandManager;
+import org.geysermc.geyser.command.GeyserCommandSource;
 import org.geysermc.geyser.configuration.GeyserConfiguration;
 import org.geysermc.geyser.dump.BootstrapDumpInfo;
 import org.geysermc.geyser.level.WorldManager;
@@ -60,6 +64,7 @@ import org.geysermc.geyser.ping.IGeyserPingPassthrough;
 import org.geysermc.geyser.platform.spigot.command.GeyserBrigadierSupport;
 import org.geysermc.geyser.platform.spigot.command.GeyserSpigotCommandExecutor;
 import org.geysermc.geyser.platform.spigot.command.GeyserSpigotCommandManager;
+import org.geysermc.geyser.platform.spigot.command.SpigotCommandSource;
 import org.geysermc.geyser.platform.spigot.world.GeyserPistonListener;
 import org.geysermc.geyser.platform.spigot.world.GeyserSpigotBlockPlaceListener;
 import org.geysermc.geyser.platform.spigot.world.manager.*;
@@ -399,6 +404,11 @@ public class GeyserSpigotPlugin extends JavaPlugin implements GeyserBootstrap {
     @Override
     public GeyserCommandManager getGeyserCommandManager() {
         return this.geyserCommandManager;
+    }
+
+    @Override
+    public CommandManager<? extends GeyserCommandSource> createCloudCommandManager() throws Exception {
+        return new PaperCommandManager<>(this, CommandExecutionCoordinator.simpleCoordinator(), SpigotCommandSource::new, SpigotCommandSource::getHandle);
     }
 
     @Override

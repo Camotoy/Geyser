@@ -25,6 +25,7 @@
 
 package org.geysermc.geyser;
 
+import cloud.commandframework.CommandManager;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -65,6 +66,7 @@ import org.geysermc.geyser.api.network.AuthType;
 import org.geysermc.geyser.api.network.BedrockListener;
 import org.geysermc.geyser.api.network.RemoteServer;
 import org.geysermc.geyser.command.GeyserCommandManager;
+import org.geysermc.geyser.command.GeyserCommandSource;
 import org.geysermc.geyser.configuration.GeyserConfiguration;
 import org.geysermc.geyser.entity.EntityDefinitions;
 import org.geysermc.geyser.event.GeyserEventBus;
@@ -151,6 +153,8 @@ public class GeyserImpl implements GeyserApi {
     private final EventBus<EventRegistrar> eventBus;
     private final GeyserExtensionManager extensionManager;
 
+    private final CommandManager<? extends GeyserCommandSource> commandManager;
+
     private Metrics metrics;
 
     private PendingMicrosoftAuthentication pendingMicrosoftAuthentication;
@@ -176,6 +180,12 @@ public class GeyserImpl implements GeyserApi {
         this.extensionManager = new GeyserExtensionManager();
         this.extensionManager.init();
         this.eventBus.fire(new GeyserPreInitializeEvent(this.extensionManager, this.eventBus));
+
+        try {
+            this.commandManager = bootstrap.createCloudCommandManager();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void initialize() {

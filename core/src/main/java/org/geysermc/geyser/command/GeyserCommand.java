@@ -95,4 +95,7 @@ public abstract class GeyserCommand implements Command {
     public boolean isSuggestedOpOnly() {
         return false;
     }
+
+    public void appendCommandSuggestions(cloud.commandframework.Command.Builder<? extends GeyserCommandSource> builder) {
+    }
 }

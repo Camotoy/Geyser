@@ -6,6 +6,8 @@ dependencies {
     implementation(libs.commodore)
 
     implementation(libs.adventure.text.serializer.bungeecord)
+
+    implementation(libs.cloud.paper)
     
     // Both paper-api and paper-mojangapi only provide Java 17 versions for 1.19
     compileOnly(libs.paper.api) {

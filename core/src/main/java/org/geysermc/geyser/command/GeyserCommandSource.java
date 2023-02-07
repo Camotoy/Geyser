@@ -25,10 +25,10 @@
 
 package org.geysermc.geyser.command;
 
-import org.geysermc.geyser.api.command.CommandSource;
-import org.geysermc.geyser.text.GeyserLocale;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import org.geysermc.geyser.api.command.CommandSource;
+import org.geysermc.geyser.text.GeyserLocale;
 
 /**
  * Implemented on top of any class that can send a command.

@@ -25,8 +25,7 @@
 
 package org.geysermc.geyser.util;
 
-public class MathUtils {
-    public static final double SQRT_OF_TWO = Math.sqrt(2);
+public final class MathUtils {
 
     public static float wrapDegrees(float degrees) {
         degrees = degrees % 360.0f;
@@ -147,5 +146,8 @@ public class MathUtils {
      */
     public static int getGlobalPaletteForSize(int size) {
         return 32 - Integer.numberOfLeadingZeros(size - 1);
+    }
+
+    private MathUtils() {
     }
 }

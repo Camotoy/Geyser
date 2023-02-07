@@ -25,7 +25,9 @@
 
 package org.geysermc.geyser;
 
+import cloud.commandframework.CommandManager;
 import org.geysermc.geyser.command.GeyserCommandManager;
+import org.geysermc.geyser.command.GeyserCommandSource;
 import org.geysermc.geyser.configuration.GeyserConfiguration;
 import org.geysermc.geyser.dump.BootstrapDumpInfo;
 import org.geysermc.geyser.level.GeyserWorldManager;
@@ -73,6 +75,10 @@ public interface GeyserBootstrap {
      * @return The current CommandManager
      */
     GeyserCommandManager getGeyserCommandManager();
+
+    default CommandManager<? extends GeyserCommandSource> createCloudCommandManager() throws Exception {
+        throw new UnsupportedOperationException();
+    }
 
     /**
      * Returns the current PingPassthrough manager

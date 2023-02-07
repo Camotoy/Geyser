@@ -25,6 +25,7 @@
 
 package org.geysermc.geyser.command.defaults;
 
+import cloud.commandframework.Command;
 import com.fasterxml.jackson.core.util.DefaultIndenter;
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -151,5 +152,12 @@ public class DumpCommand extends GeyserCommand {
     @Override
     public boolean isSuggestedOpOnly() {
         return true;
+    }
+
+    @Override
+    public void appendCommandSuggestions(Command.Builder<? extends GeyserCommandSource> builder) {
+        for (String subCommand : subCommands()) {
+            builder.literal(subCommand);
+        }
     }
 }

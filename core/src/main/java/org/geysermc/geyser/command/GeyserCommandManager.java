@@ -25,6 +25,7 @@
 
 package org.geysermc.geyser.command;
 
+import cloud.commandframework.ArgumentDescription;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -71,7 +72,16 @@ public class GeyserCommandManager {
 
     private final GeyserImpl geyser;
 
+    private void registerBuiltInCommand(cloud.commandframework.Command.Builder<? extends GeyserCommandSource> builder, GeyserCommand command) {
+        var subBuilder = builder.literal(command.name(),
+                        ArgumentDescription.of(command.description()), command.aliases().toArray(String[]::new))
+                .permission(command.permission());
+        command.appendCommandSuggestions(subBuilder);
+    }
+
     public void init() {
+        var builder = geyser.getCommandManager().commandBuilder("geyser");
+
         registerBuiltInCommand(new HelpCommand(geyser, "help", "geyser.commands.help.desc", "geyser.command.help", "geyser", this.commands));
         registerBuiltInCommand(new ListCommand(geyser, "list", "geyser.commands.list.desc", "geyser.command.list"));
         registerBuiltInCommand(new ReloadCommand(geyser, "reload", "geyser.commands.reload.desc", "geyser.command.reload"));
@@ -109,6 +119,9 @@ public class GeyserCommandManager {
         for (Map.Entry<Extension, Map<String, Command>> entry : this.extensionCommands.entrySet()) {
             registerExtensionCommand(entry.getKey(), new HelpCommand(this.geyser, "help", "geyser.commands.exthelp.desc", "geyser.command.exthelp", entry.getKey().description().id(), entry.getValue()));
         }
+
+        geyser.getCommandManager().registerCommandPreProcessor(new SessionPreprocessor());
+        geyser.getCommandManager().command(builder);
     }
 
     /**

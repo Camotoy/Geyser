@@ -53,6 +53,9 @@ dependencies {
     // Adventure text serialization
     api(libs.bundles.adventure)
 
+    // Commands
+    api(libs.cloud.core)
+
     // Test
     testImplementation(libs.junit)
 
