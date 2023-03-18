@@ -1,0 +1,121 @@
+name: Build
+
+on:
+  workflow_dispatch:
+  push:
+    paths-ignore:
+      - '.github/ISSUE_TEMPLATE/*.yml'
+      - '.github/actions/pullrequest.yml'
+      - '.idea/copyright/*.xml' 
+      - '.gitignore'
+      - 'CONTRIBUTING.md'
+      - 'LICENSE'
+      - 'Jenkinsfile '
+      - 'README.md'
+      - 'licenseheader.txt'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository and submodules
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-java@v3
+        with:
+          java-version: 17
+          distribution: temurin
+          
+      - name: Cache Gradle Packages
+        uses: actions/cache@v3
+        with:
+          path: | 
+            ~/.m2
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ github.ref_name }}-gradle-${{ hashFiles('*.gradle.kts', 'gradle.properties', 'gradlew', 'gradle/*', 'gradle/**/*', 'build-logic/*', 'build-logic/**/**/**/*', '**/*.gradle.kts', '**/**/*.gradle.kts') }}
+          restore-keys: ${{ github.ref_name }}-gradle-
+
+      - name: Build
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: build --no-daemon
+          
+      - name: Archive artifacts (Geyser Fabric)
+        uses: actions/upload-artifact@v3
+        if: success()
+        with:
+          name: Geyser Fabric
+          path: bootstrap/fabric/build/libs/Geyser-Fabric.jar
+          if-no-files-found: error
+      - name: Archive artifacts (Geyser Standalone)
+        uses: actions/upload-artifact@v3
+        if: success()
+        with:
+          name: Geyser Standalone
+          path: bootstrap/standalone/build/libs/Geyser-Standalone.jar
+          if-no-files-found: error
+      - name: Archive artifacts (Geyser Spigot)
+        uses: actions/upload-artifact@v3
+        if: success()
+        with:
+          name: Geyser Spigot
+          path: bootstrap/spigot/build/libs/Geyser-Spigot.jar
+          if-no-files-found: error
+      - name: Archive artifacts (Geyser BungeeCord)
+        uses: actions/upload-artifact@v3
+        if: success()
+        with:
+          name: Geyser BungeeCord
+          path: bootstrap/bungeecord/build/libs/Geyser-BungeeCord.jar
+          if-no-files-found: error
+      - name: Archive artifacts (Geyser Sponge)
+        uses: actions/upload-artifact@v3
+        if: success()
+        with:
+          name: Geyser Sponge
+          path: bootstrap/sponge/build/libs/Geyser-Sponge.jar
+          if-no-files-found: error
+      - name: Archive artifacts (Geyser Velocity)
+        uses: actions/upload-artifact@v3
+        if: success()
+        with:
+          name: Geyser Velocity
+          path: bootstrap/velocity/build/libs/Geyser-Velocity.jar
+          if-no-files-found: error
+
+      - name: Publish to Maven Repository
+        if: ${{ job.status == 'success' && github.repository == 'GeyserMC/Geyser' && github.ref_name == 'master' }}
+        uses: gradle/gradle-build-action@v2
+        env:
+          ORG_GRADLE_PROJECT_geysermcUsername: ${{ vars.DEPLOY_USER }}
+          ORG_GRADLE_PROJECT_geysermcPassword: ${{ secrets.DEPLOY_PASS }}
+        with:
+          arguments: publish
+
+      - name: Publish to Downloads API
+        if: ${{ github.ref_name == 'master' && job.status == 'success' && github.repository == 'GeyserMC/Geyser' }}
+        shell: bash
+        env:
+          DOWNLOADS_USERNAME: ${{ vars.DOWNLOADS_USERNAME }}
+          DOWNLOADS_PRIVATE_KEY: ${{ secrets.DOWNLOADS_PRIVATE_KEY }}
+          DOWNLOADS_SERVER_IP: ${{ secrets.DOWNLOADS_SERVER_IP }}
+        run: |
+          # Save the private key to a file
+          echo "$DOWNLOADS_PRIVATE_KEY" > id_ecdsa
+          chmod 600 id_ecdsa
+          # Get the version from gradle.properties
+          version=$(cat gradle.properties | grep -o "version=[0-9\\.]*" | cut -d"=" -f2)
+          # Copy over artifacts
+          scp -B -o StrictHostKeyChecking=no -i id_ecdsa bootstrap/**/build/libs/Geyser-*.jar $DOWNLOADS_USERNAME@$DOWNLOADS_SERVER_IP:~/files/
+          # Run the build script
+          ssh -o StrictHostKeyChecking=no -i id_ecdsa $DOWNLOADS_USERNAME@$DOWNLOADS_SERVER_IP ./handleBuild.sh geyser $version $GITHUB_RUN_NUMBER $GITHUB_SHA
+
+      - name: Notify Discord
+        if: ${{ (success() || failure()) && github.repository == 'GeyserMC/Geyser' }}
+        uses: Tim203/actions-git-discord-webhook@main
+        with:
+          webhook_url: ${{ secrets.DISCORD_WEBHOOK }}
+          status: ${{ job.status }}

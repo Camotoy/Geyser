@@ -185,7 +185,7 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource {
 
     private final AdvancementsCache advancementsCache;
     private final BookEditCache bookEditCache;
-    private @org.checkerframework.checker.nullness.qual.NonNull final ChunkCache chunkCache;
+    private final ChunkCache chunkCache;
     private final EntityCache entityCache;
     private final EntityEffectCache effectCache;
     private final FormCache formCache;
@@ -645,7 +645,7 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource {
         // Potion mixes are registered by default, as they are needed to be able to put ingredients into the brewing stand.
         CraftingDataPacket craftingDataPacket = new CraftingDataPacket();
         craftingDataPacket.setCleanRecipes(true);
-        craftingDataPacket.getPotionMixData().addAll(Registries.POTION_MIXES.get());
+        craftingDataPacket.getPotionMixData().addAll(Registries.POTION_MIXES.forVersion(this.upstream.getProtocolVersion()));
         upstream.sendPacket(craftingDataPacket);
 
         PlayStatusPacket playStatusPacket = new PlayStatusPacket();
@@ -1017,7 +1017,7 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource {
                     // Server is offline, probably
                     disconnectMessage = GeyserLocale.getPlayerLocaleString("geyser.network.remote.server_offline", locale());
                 } else {
-                    disconnectMessage = MessageTranslator.convertMessageLenient(event.getReason());
+                    disconnectMessage = MessageTranslator.convertMessage(event.getReason());
                 }
 
                 if (downstream instanceof LocalSession) {
@@ -1419,10 +1419,6 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource {
     }
 
     public void setServerRenderDistance(int renderDistance) {
-        // +1 is for Fabric and Spigot
-        // Without the client misses loading some chunks per https://github.com/GeyserMC/Geyser/issues/3490
-        // Fog still appears essentially normally
-        renderDistance = renderDistance + 1;
         this.serverRenderDistance = renderDistance;
 
         ChunkRadiusUpdatedPacket chunkRadiusUpdatedPacket = new ChunkRadiusUpdatedPacket();
@@ -1434,11 +1430,13 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource {
         return this.upstream.getAddress();
     }
 
+    @Override
     public boolean sendForm(@NonNull Form form) {
         formCache.showForm(form);
         return true;
     }
 
+    @Override
     public boolean sendForm(@NonNull FormBuilder<?, ?, ?> formBuilder) {
         formCache.showForm(formBuilder.build());
         return true;
@@ -1699,6 +1697,8 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource {
         abilities.add(Ability.MINE);
         // Needed so you can drop items
         abilities.add(Ability.DOORS_AND_SWITCHES);
+        // Required for lecterns to work (likely started around 1.19.10; confirmed on 1.19.70)
+        abilities.add(Ability.OPEN_CONTAINERS);
         if (gameMode == GameMode.CREATIVE) {
             // Needed so the client doesn't attempt to take away items
             abilities.add(Ability.INSTABUILD);
