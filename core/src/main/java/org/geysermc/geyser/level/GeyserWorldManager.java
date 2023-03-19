@@ -25,6 +25,7 @@
 
 package org.geysermc.geyser.level;
 
+import com.github.steveice10.mc.protocol.data.game.level.block.BlockEntityInfo;
 import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
 import com.nukkitx.math.vector.Vector3i;
 import com.nukkitx.nbt.NbtMap;
@@ -37,9 +38,11 @@ import org.geysermc.erosion.packet.backendbound.BackendboundPickBlockPacket;
 import org.geysermc.erosion.util.BlockPositionIterator;
 import org.geysermc.geyser.session.GeyserSession;
 import org.geysermc.geyser.translator.inventory.LecternInventoryTranslator;
+import org.geysermc.geyser.util.BlockEntityUtils;
 import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.Nonnull;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public class GeyserWorldManager extends WorldManager {
@@ -79,7 +82,12 @@ public class GeyserWorldManager extends WorldManager {
     }
 
     @Override
-    public NbtMap getLecternDataAt(GeyserSession session, int x, int y, int z, boolean isChunkLoad) {
+    public void sendLecternData(GeyserSession session, int x, int z, List<BlockEntityInfo> blockEntityInfos) {
+        // otherwise no-op - don't send any additional information other than what the chunk has already sent
+    }
+
+    @Override
+    public void sendLecternData(GeyserSession session, int x, int y, int z) {
         // Without direct server access, we can't get lectern information on-the-fly.
         // I should have set this up so it's only called when there is a book in the block state. - Camotoy
         NbtMapBuilder lecternTag = LecternInventoryTranslator.getBaseLecternTag(x, y, z, 1);
@@ -93,7 +101,7 @@ public class GeyserWorldManager extends WorldManager {
                         .build())
                 .build());
         lecternTag.putInt("page", -1); // I'm surprisingly glad this exists - it forces Bedrock to stop reading immediately. Usually.
-        return lecternTag.build();
+        BlockEntityUtils.updateBlockEntity(session, lecternTag.build(), Vector3i.from(x, y, z));
     }
 
     @Override

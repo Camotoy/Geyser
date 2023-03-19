@@ -264,8 +264,8 @@ public class JavaLevelChunkWithLightTranslator extends PacketTranslator<Clientbo
 
                 if (type == BlockEntityType.LECTERN && BlockStateValues.getLecternBookStates().get(blockState)) {
                     // If getLecternBookStates is false, let's just treat it like a normal block entity
-                    bedrockBlockEntities.add(session.getGeyser().getWorldManager().getLecternDataAt(
-                            session, x + chunkBlockX, y, z + chunkBlockZ, true));
+//                    bedrockBlockEntities.add(session.getGeyser().getWorldManager().getLecternDataAt(
+//                            session, x + chunkBlockX, y, z + chunkBlockZ, true));
                     continue;
                 }
 
