@@ -55,19 +55,16 @@ public class LecternHasBookMap extends FixedInt2BooleanMap {
 
         boolean newLecternHasBook;
         if (worldManager.shouldExpectLecternHandled()) {
-            // As of right now, no tag can be added asynchronously
-            worldManager.getLecternDataAt(session, position.getX(), position.getY(), position.getZ(), false);
+            worldManager.sendLecternData(session, position.getX(), position.getY(), position.getZ());
         } else if ((newLecternHasBook = this.value[offset]) != this.get(worldManager.getBlockAt(session, position))) {
-            // If the lectern block was updated, or it previously had a book
-            NbtMap newLecternTag;
             // newLecternHasBook = the new lectern block state's "has book" toggle.
             if (newLecternHasBook) {
-                newLecternTag = worldManager.getLecternDataAt(session, position.getX(), position.getY(), position.getZ(), false);
+                worldManager.sendLecternData(session, position.getX(), position.getY(), position.getZ());
             } else {
                 session.getLecternCache().remove(position);
-                newLecternTag = LecternInventoryTranslator.getBaseLecternTag(position.getX(), position.getY(), position.getZ(), 0).build();
+                NbtMap newLecternTag = LecternInventoryTranslator.getBaseLecternTag(position.getX(), position.getY(), position.getZ(), 0).build();
+                BlockEntityUtils.updateBlockEntity(session, newLecternTag, position);
             }
-            BlockEntityUtils.updateBlockEntity(session, newLecternTag, position);
         }
     }
 }

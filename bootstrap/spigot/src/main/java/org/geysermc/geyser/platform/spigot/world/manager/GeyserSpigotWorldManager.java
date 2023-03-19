@@ -25,12 +25,14 @@
 
 package org.geysermc.geyser.platform.spigot.world.manager;
 
+import com.github.steveice10.mc.protocol.data.game.level.block.BlockEntityInfo;
 import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
 import com.nukkitx.math.vector.Vector3i;
 import com.nukkitx.nbt.NbtMap;
 import com.nukkitx.nbt.NbtMapBuilder;
 import com.nukkitx.nbt.NbtType;
 import org.bukkit.Bukkit;
+import org.bukkit.Chunk;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.Lectern;
@@ -88,67 +90,87 @@ public class GeyserSpigotWorldManager extends WorldManager {
     }
 
     @Override
-    public NbtMap getLecternDataAt(GeyserSession session, int x, int y, int z, boolean isChunkLoad) {
+    public void sendLecternData(GeyserSession session, int x, int y, int z) {
         // Run as a task to prevent async issues
-        Runnable lecternInfoGet = () -> {
+        Bukkit.getScheduler().runTask(this.plugin, () -> {
             Player bukkitPlayer;
             if ((bukkitPlayer = Bukkit.getPlayer(session.getPlayerEntity().getUsername())) == null) {
                 return;
             }
 
             Block block = bukkitPlayer.getWorld().getBlockAt(x, y, z);
-            if (!(block.getState() instanceof Lectern lectern)) {
-                session.getGeyser().getLogger().error("Lectern expected at: " + Vector3i.from(x, y, z).toString() + " but was not! " + block.toString());
+            sendLecternData(session, block, false);
+        });
+    }
+
+    public void sendLecternData(GeyserSession session, int x, int z, List<BlockEntityInfo> blockEntityInfos) {
+        Bukkit.getScheduler().runTask(this.plugin, () -> {
+            Player bukkitPlayer;
+            if ((bukkitPlayer = Bukkit.getPlayer(session.getPlayerEntity().getUsername())) == null) {
                 return;
             }
 
-            ItemStack itemStack = lectern.getInventory().getItem(0);
-            if (itemStack == null || !(itemStack.getItemMeta() instanceof BookMeta bookMeta)) {
-                if (!isChunkLoad) {
-                    // We need to update the lectern since it's not going to be updated otherwise
-                    BlockEntityUtils.updateBlockEntity(session, LecternInventoryTranslator.getBaseLecternTag(x, y, z, 0).build(), Vector3i.from(x, y, z));
-                }
-                // We don't care; return
+            // TODO
+            World world = bukkitPlayer.getWorld();
+            if (!world.isChunkLoaded(x, z)) {
                 return;
             }
+            Chunk chunk = world.getChunkAt(x, z);
+            for (int i = 0; i < blockEntityInfos.size(); i++) {
+                BlockEntityInfo info = blockEntityInfos.get(i);
+                Block block = chunk.getBlock(info.getX(), info.getY(), info.getZ());
+                sendLecternData(session, block, true);
+            }
+        });
+    }
 
-            // On the count: allow the book to show/open even there are no pages. We know there is a book here, after all, and this matches Java behavior
-            boolean hasBookPages = bookMeta.getPageCount() > 0;
-            NbtMapBuilder lecternTag = LecternInventoryTranslator.getBaseLecternTag(x, y, z, hasBookPages ? bookMeta.getPageCount() : 1);
-            lecternTag.putInt("page", lectern.getPage() / 2);
-            NbtMapBuilder bookTag = NbtMap.builder()
-                    .putByte("Count", (byte) itemStack.getAmount())
-                    .putShort("Damage", (short) 0)
-                    .putString("Name", "minecraft:writable_book");
-            List<NbtMap> pages = new ArrayList<>(bookMeta.getPageCount());
-            if (hasBookPages) {
-                for (String page : bookMeta.getPages()) {
-                    NbtMapBuilder pageBuilder = NbtMap.builder()
-                            .putString("photoname", "")
-                            .putString("text", page);
-                    pages.add(pageBuilder.build());
-                }
-            } else {
-                // Empty page
+    private void sendLecternData(GeyserSession session, Block block, boolean isChunkLoad) {
+        int x = block.getX();
+        int y = block.getY();
+        int z = block.getZ();
+        if (!(block.getState() instanceof Lectern lectern)) {
+            session.getGeyser().getLogger().error("Lectern expected at: " + Vector3i.from(x, y, z).toString() + " but was not! " + block.toString());
+            return;
+        }
+
+        ItemStack itemStack = lectern.getInventory().getItem(0);
+        if (itemStack == null || !(itemStack.getItemMeta() instanceof BookMeta bookMeta)) {
+            if (!isChunkLoad) {
+                // We need to update the lectern since it's not going to be updated otherwise
+                BlockEntityUtils.updateBlockEntity(session, LecternInventoryTranslator.getBaseLecternTag(x, y, z, 0).build(), Vector3i.from(x, y, z));
+            }
+            // We don't care; return
+            return;
+        }
+
+        // On the count: allow the book to show/open even there are no pages. We know there is a book here, after all, and this matches Java behavior
+        boolean hasBookPages = bookMeta.getPageCount() > 0;
+        NbtMapBuilder lecternTag = LecternInventoryTranslator.getBaseLecternTag(x, y, z, hasBookPages ? bookMeta.getPageCount() : 1);
+        lecternTag.putInt("page", lectern.getPage() / 2);
+        NbtMapBuilder bookTag = NbtMap.builder()
+                .putByte("Count", (byte) itemStack.getAmount())
+                .putShort("Damage", (short) 0)
+                .putString("Name", "minecraft:writable_book");
+        List<NbtMap> pages = new ArrayList<>(bookMeta.getPageCount());
+        if (hasBookPages) {
+            for (String page : bookMeta.getPages()) {
                 NbtMapBuilder pageBuilder = NbtMap.builder()
                         .putString("photoname", "")
-                        .putString("text", "");
+                        .putString("text", page);
                 pages.add(pageBuilder.build());
             }
-            
-            bookTag.putCompound("tag", NbtMap.builder().putList("pages", NbtType.COMPOUND, pages).build());
-            lecternTag.putCompound("book", bookTag.build());
-            NbtMap blockEntityTag = lecternTag.build();
-            BlockEntityUtils.updateBlockEntity(session, blockEntityTag, Vector3i.from(x, y, z));
-        };
-
-        if (isChunkLoad) {
-            // Delay to ensure the chunk is sent first, and then the lectern data
-            Bukkit.getScheduler().runTaskLater(this.plugin, lecternInfoGet, 5);
         } else {
-            Bukkit.getScheduler().runTask(this.plugin, lecternInfoGet);
+            // Empty page
+            NbtMapBuilder pageBuilder = NbtMap.builder()
+                    .putString("photoname", "")
+                    .putString("text", "");
+            pages.add(pageBuilder.build());
         }
-        return LecternInventoryTranslator.getBaseLecternTag(x, y, z, 0).build(); // Will be updated later
+
+        bookTag.putCompound("tag", NbtMap.builder().putList("pages", NbtType.COMPOUND, pages).build());
+        lecternTag.putCompound("book", bookTag.build());
+        NbtMap blockEntityTag = lecternTag.build();
+        BlockEntityUtils.updateBlockEntity(session, blockEntityTag, Vector3i.from(x, y, z));
     }
 
     @Override
