@@ -47,7 +47,7 @@ public class GeyserWorldManager extends WorldManager {
 
     @Override
     public int getBlockAt(GeyserSession session, int x, int y, int z) {
-        var erosionHandler = session.getErosionHandler();
+        var erosionHandler = session.getErosionHandler().getAsActive();
         if (erosionHandler == null) {
             return session.getChunkCache().getBlockAt(x, y, z);
         }
@@ -62,7 +62,7 @@ public class GeyserWorldManager extends WorldManager {
 
     @Override
     public int[] getBlocksAt(GeyserSession session, BlockPositionIterator iter) {
-        var erosionHandler = session.getErosionHandler();
+        var erosionHandler = session.getErosionHandler().getAsActive();
         if (erosionHandler == null) {
             return super.getBlocksAt(session, iter);
         }
@@ -135,7 +135,7 @@ public class GeyserWorldManager extends WorldManager {
     @Nonnull
     @Override
     public CompletableFuture<@Nullable CompoundTag> getPickItemNbt(GeyserSession session, int x, int y, int z, boolean addNbtData) {
-        var erosionHandler = session.getErosionHandler();
+        var erosionHandler = session.getErosionHandler().getAsActive();
         if (erosionHandler == null) {
             return super.getPickItemNbt(session, x, y, z, addNbtData);
         }

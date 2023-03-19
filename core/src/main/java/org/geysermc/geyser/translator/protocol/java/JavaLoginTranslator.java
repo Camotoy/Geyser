@@ -37,6 +37,7 @@ import org.geysermc.erosion.Constants;
 import org.geysermc.floodgate.pluginmessage.PluginMessageChannels;
 import org.geysermc.geyser.api.network.AuthType;
 import org.geysermc.geyser.entity.type.player.SessionPlayerEntity;
+import org.geysermc.geyser.erosion.GeyserboundHandshakePacketHandler;
 import org.geysermc.geyser.level.JavaDimension;
 import org.geysermc.geyser.session.GeyserSession;
 import org.geysermc.geyser.text.TextDecoration;
@@ -59,9 +60,9 @@ public class JavaLoginTranslator extends PacketTranslator<ClientboundLoginPacket
         SessionPlayerEntity entity = session.getPlayerEntity();
         entity.setEntityId(packet.getEntityId());
 
-        if (session.getErosionHandler() != null) {
+        if (session.getErosionHandler().isActive()) {
             session.getErosionHandler().close();
-            session.setErosionHandler(null);
+            session.setErosionHandler(new GeyserboundHandshakePacketHandler(session));
         }
 
         Map<String, JavaDimension> dimensions = session.getDimensions();

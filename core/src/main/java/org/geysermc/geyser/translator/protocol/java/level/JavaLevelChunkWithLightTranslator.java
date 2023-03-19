@@ -240,7 +240,7 @@ public class JavaLevelChunkWithLightTranslator extends PacketTranslator<Clientbo
                 sections[bedrockSectionY] = new GeyserChunkSection(layers);
             }
 
-            if (session.getErosionHandler() == null) {
+            if (!session.getErosionHandler().isActive()) {
                 session.getChunkCache().addToCache(packet.getX(), packet.getZ(), javaChunks);
             }
 

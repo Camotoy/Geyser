@@ -112,7 +112,8 @@ import org.geysermc.geyser.entity.type.Entity;
 import org.geysermc.geyser.entity.type.ItemFrameEntity;
 import org.geysermc.geyser.entity.type.Tickable;
 import org.geysermc.geyser.entity.type.player.SessionPlayerEntity;
-import org.geysermc.geyser.erosion.GeyserboundPacketHandlerImpl;
+import org.geysermc.geyser.erosion.AbstractGeyserboundPacketHandler;
+import org.geysermc.geyser.erosion.GeyserboundHandshakePacketHandler;
 import org.geysermc.geyser.inventory.Inventory;
 import org.geysermc.geyser.inventory.PlayerInventory;
 import org.geysermc.geyser.inventory.recipe.GeyserRecipe;
@@ -137,6 +138,7 @@ import org.geysermc.geyser.translator.text.MessageTranslator;
 import org.geysermc.geyser.util.ChunkUtils;
 import org.geysermc.geyser.util.DimensionUtils;
 import org.geysermc.geyser.util.LoginEncryptionUtils;
+import org.jetbrains.annotations.NotNull;
 
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
@@ -169,9 +171,9 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource {
     @Setter
     private JsonNode certChainData;
 
-    @MonotonicNonNull
+    @NotNull
     @Setter
-    private GeyserboundPacketHandlerImpl erosionHandler;
+    private AbstractGeyserboundPacketHandler erosionHandler;
 
     @Accessors(fluent = true)
     @Setter
@@ -555,6 +557,8 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource {
         this.geyser = geyser;
         this.upstream = new UpstreamSession(bedrockServerSession);
         this.eventLoop = eventLoop;
+
+        this.erosionHandler = new GeyserboundHandshakePacketHandler(this);
 
         this.advancementsCache = new AdvancementsCache(this);
         this.bookEditCache = new BookEditCache(this);
@@ -1080,9 +1084,7 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource {
             tickThread.cancel(false);
         }
 
-        if (erosionHandler != null) {
-            erosionHandler.close();
-        }
+        erosionHandler.close();
 
         closed = true;
     }

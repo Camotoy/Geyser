@@ -49,8 +49,7 @@ import org.geysermc.geyser.translator.level.block.entity.PistonBlockEntity;
 
 import java.util.concurrent.CompletableFuture;
 
-public final class GeyserboundPacketHandlerImpl implements GeyserboundPacketHandler {
-    private final GeyserSession session;
+public final class GeyserboundPacketHandlerImpl extends AbstractGeyserboundPacketHandler {
     private final ErosionPacketSender<BackendboundPacket> packetSender;
     @Setter
     private CompletableFuture<Integer> pendingLookup = null;
@@ -60,7 +59,7 @@ public final class GeyserboundPacketHandlerImpl implements GeyserboundPacketHand
     private CompletableFuture<CompoundTag> pickBlockLookup = null;
 
     public GeyserboundPacketHandlerImpl(GeyserSession session, ErosionPacketSender<BackendboundPacket> packetSender) {
-        this.session = session;
+        super(session);
         this.packetSender = packetSender;
     }
 
@@ -139,6 +138,24 @@ public final class GeyserboundPacketHandlerImpl implements GeyserboundPacketHand
                     new PistonBlockEntity(session, position, orientation, packet.isSticky(), !isExtend));
             blockEntity.setAction(isExtend ? PistonValueType.PUSHING : PistonValueType.PULLING, attachedBlocks);
         });
+    }
+
+    @Override
+    public void handleHandshake(GeyserboundHandshakePacket packet) {
+        this.close();
+        var handler = new GeyserboundHandshakePacketHandler(this.session);
+        session.setErosionHandler(handler);
+        handler.handleHandshake(packet);
+    }
+
+    @Override
+    public boolean isActive() {
+        return true;
+    }
+
+    @Override
+    public GeyserboundPacketHandlerImpl getAsActive() {
+        return this;
     }
 
     @Override

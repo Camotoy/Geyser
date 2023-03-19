@@ -66,7 +66,7 @@ public class JavaBlockEventTranslator extends PacketTranslator<ClientboundBlockE
             Direction direction = Direction.fromPistonValue(pistonValue.getDirection());
             PistonCache pistonCache = session.getPistonCache();
 
-            if (session.getGeyser().getPlatformType() == PlatformType.SPIGOT || session.getErosionHandler() != null) {
+            if (session.getGeyser().getPlatformType() == PlatformType.SPIGOT || session.getErosionHandler().isActive()) {
                 // Mostly handled in the GeyserPistonEvents class
                 // Retracting sticky pistons is an exception, since the event is not called on Spigot from 1.13.2 - 1.17.1
                 // See https://github.com/PaperMC/Paper/blob/6fa1983e9ce177a4a412d5b950fd978620174777/patches/server/0304-Fire-BlockPistonRetractEvent-for-all-empty-pistons.patch

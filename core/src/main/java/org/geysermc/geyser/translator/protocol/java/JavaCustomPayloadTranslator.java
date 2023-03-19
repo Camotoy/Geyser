@@ -32,21 +32,16 @@ import com.nukkitx.protocol.bedrock.packet.TransferPacket;
 import com.nukkitx.protocol.bedrock.packet.UnknownPacket;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.Channel;
 import org.geysermc.cumulus.Forms;
 import org.geysermc.cumulus.form.Form;
 import org.geysermc.cumulus.form.util.FormType;
 import org.geysermc.erosion.Constants;
-import org.geysermc.erosion.netty.NettyPacketSender;
 import org.geysermc.erosion.packet.ErosionPacket;
-import org.geysermc.erosion.packet.GeyserboundHandshake;
 import org.geysermc.erosion.packet.Packets;
 import org.geysermc.erosion.packet.geyserbound.GeyserboundPacket;
 import org.geysermc.floodgate.pluginmessage.PluginMessageChannels;
 import org.geysermc.geyser.GeyserImpl;
 import org.geysermc.geyser.GeyserLogger;
-import org.geysermc.geyser.erosion.GeyserErosionPacketSender;
-import org.geysermc.geyser.erosion.GeyserboundPacketHandlerImpl;
 import org.geysermc.geyser.session.GeyserSession;
 import org.geysermc.geyser.translator.protocol.PacketTranslator;
 import org.geysermc.geyser.translator.protocol.Translator;
@@ -62,27 +57,9 @@ public class JavaCustomPayloadTranslator extends PacketTranslator<ClientboundCus
         String channel = packet.getChannel();
 
         if (channel.equals(Constants.PLUGIN_MESSAGE)) {
-//            if (session.getErosionHandler() != null) {
-//                session.getErosionHandler().close();
-//            }
-
-            if (session.getErosionHandler() == null) {
-                GeyserboundHandshake handshake = new GeyserboundHandshake(Unpooled.wrappedBuffer(packet.getData()));
-                boolean useTcp = handshake.getTransportType().getSocketAddress() == null;
-                GeyserboundPacketHandlerImpl handler = new GeyserboundPacketHandlerImpl(session, useTcp ? new GeyserErosionPacketSender(session) : new NettyPacketSender<>());
-                session.setErosionHandler(handler);
-                if (!useTcp) {
-                    Channel nettyChannel = session.getGeyser().getErosion().createClient(handler);
-                    nettyChannel.connect(handshake.getTransportType().getSocketAddress());
-//                } else {
-//                    handler.onConnect();
-                }
-                session.ensureInEventLoop(() -> session.getChunkCache().clear());
-            } else {
-                ByteBuf buf = Unpooled.wrappedBuffer(packet.getData());
-                ErosionPacket<?> erosionPacket = Packets.decode(buf);
-                ((GeyserboundPacket) erosionPacket).handle(session.getErosionHandler());
-            }
+            ByteBuf buf = Unpooled.wrappedBuffer(packet.getData());
+            ErosionPacket<?> erosionPacket = Packets.decode(buf);
+            ((GeyserboundPacket) erosionPacket).handle(session.getErosionHandler());
             return;
         }
 
