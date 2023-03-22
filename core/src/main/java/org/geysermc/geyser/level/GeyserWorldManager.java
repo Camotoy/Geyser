@@ -32,12 +32,11 @@ import com.nukkitx.nbt.NbtMap;
 import com.nukkitx.nbt.NbtMapBuilder;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import org.geysermc.erosion.packet.backendbound.BackendboundBatchBlockRequestPacket;
-import org.geysermc.erosion.packet.backendbound.BackendboundBlockRequestPacket;
-import org.geysermc.erosion.packet.backendbound.BackendboundPickBlockPacket;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import org.geysermc.erosion.packet.backendbound.*;
 import org.geysermc.erosion.util.BlockPositionIterator;
+import org.geysermc.erosion.util.LecternUtils;
 import org.geysermc.geyser.session.GeyserSession;
-import org.geysermc.geyser.translator.inventory.LecternInventoryTranslator;
 import org.geysermc.geyser.util.BlockEntityUtils;
 import org.jetbrains.annotations.Nullable;
 
@@ -80,14 +79,30 @@ public class GeyserWorldManager extends WorldManager {
 
     @Override
     public void sendLecternData(GeyserSession session, int x, int z, List<BlockEntityInfo> blockEntityInfos) {
-        // otherwise no-op - don't send any additional information other than what the chunk has already sent
+        var erosionHandler = session.getErosionHandler().getAsActive();
+        if (erosionHandler == null) {
+            // No-op - don't send any additional information other than what the chunk has already sent
+            return;
+        }
+        List<Vector3i> vectors = new ObjectArrayList<>(blockEntityInfos.size());
+        for (int i = 0; i < blockEntityInfos.size(); i++) {
+            BlockEntityInfo info = blockEntityInfos.get(i);
+            vectors.add(Vector3i.from(info.getX(), info.getY(), info.getZ()));
+        }
+        erosionHandler.sendPacket(new BackendboundBatchLecternRequestPacket(x, z, vectors));
     }
 
     @Override
     public void sendLecternData(GeyserSession session, int x, int y, int z) {
+        var erosionHandler = session.getErosionHandler().getAsActive();
+        if (erosionHandler != null) {
+            erosionHandler.sendPacket(new BackendboundLecternRequestPacket(Vector3i.from(x, y, z)));
+            return;
+        }
+
         // Without direct server access, we can't get lectern information on-the-fly.
         // I should have set this up so it's only called when there is a book in the block state. - Camotoy
-        NbtMapBuilder lecternTag = LecternInventoryTranslator.getBaseLecternTag(x, y, z, 1);
+        NbtMapBuilder lecternTag = LecternUtils.getBaseLecternTag(x, y, z, 1);
         lecternTag.putCompound("book", NbtMap.builder()
                 .putByte("Count", (byte) 1)
                 .putShort("Damage", (short) 0)
@@ -102,8 +117,8 @@ public class GeyserWorldManager extends WorldManager {
     }
 
     @Override
-    public boolean shouldExpectLecternHandled() {
-        return false;
+    public boolean shouldExpectLecternHandled(GeyserSession session) {
+        return session.getErosionHandler().isActive();
     }
 
     @Override

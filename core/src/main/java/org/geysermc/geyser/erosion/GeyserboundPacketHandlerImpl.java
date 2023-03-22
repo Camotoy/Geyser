@@ -28,6 +28,7 @@ package org.geysermc.geyser.erosion;
 import com.github.steveice10.mc.protocol.data.game.level.block.value.PistonValueType;
 import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
 import com.nukkitx.math.vector.Vector3i;
+import com.nukkitx.nbt.NbtMap;
 import com.nukkitx.protocol.bedrock.data.SoundEvent;
 import com.nukkitx.protocol.bedrock.packet.LevelSoundEventPacket;
 import io.netty.channel.Channel;
@@ -46,6 +47,7 @@ import org.geysermc.geyser.registry.BlockRegistries;
 import org.geysermc.geyser.session.GeyserSession;
 import org.geysermc.geyser.session.cache.PistonCache;
 import org.geysermc.geyser.translator.level.block.entity.PistonBlockEntity;
+import org.geysermc.geyser.util.BlockEntityUtils;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -79,6 +81,12 @@ public final class GeyserboundPacketHandlerImpl extends AbstractGeyserboundPacke
         } else {
             session.getGeyser().getLogger().warning("Block data packet received with no future to complete.");
         }
+    }
+
+    @Override
+    public void handleBlockEntity(GeyserboundBlockEntityPacket packet) {
+        NbtMap nbt = packet.getNbt();
+        BlockEntityUtils.updateBlockEntity(session, nbt, Vector3i.from(nbt.getInt("x"), nbt.getInt("y"), nbt.getInt("z")));
     }
 
     @Override

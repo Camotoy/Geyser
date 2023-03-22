@@ -27,9 +27,9 @@ package org.geysermc.geyser.util.collection;
 
 import com.nukkitx.math.vector.Vector3i;
 import com.nukkitx.nbt.NbtMap;
+import org.geysermc.erosion.util.LecternUtils;
 import org.geysermc.geyser.level.WorldManager;
 import org.geysermc.geyser.session.GeyserSession;
-import org.geysermc.geyser.translator.inventory.LecternInventoryTranslator;
 import org.geysermc.geyser.util.BlockEntityUtils;
 
 /**
@@ -47,14 +47,14 @@ public class LecternHasBookMap extends FixedInt2BooleanMap {
         int offset = blockState - this.start;
         if (offset < 0 || offset >= this.value.length) {
             // Block state is out of bounds of this map - lectern has been destroyed, if it existed
-            if (!worldManager.shouldExpectLecternHandled()) {
+            if (!worldManager.shouldExpectLecternHandled(session)) {
                 session.getLecternCache().remove(position);
             }
             return;
         }
 
         boolean newLecternHasBook;
-        if (worldManager.shouldExpectLecternHandled()) {
+        if (worldManager.shouldExpectLecternHandled(session)) {
             worldManager.sendLecternData(session, position.getX(), position.getY(), position.getZ());
         } else if ((newLecternHasBook = this.value[offset]) != this.get(worldManager.getBlockAt(session, position))) {
             // newLecternHasBook = the new lectern block state's "has book" toggle.
@@ -62,7 +62,7 @@ public class LecternHasBookMap extends FixedInt2BooleanMap {
                 worldManager.sendLecternData(session, position.getX(), position.getY(), position.getZ());
             } else {
                 session.getLecternCache().remove(position);
-                NbtMap newLecternTag = LecternInventoryTranslator.getBaseLecternTag(position.getX(), position.getY(), position.getZ(), 0).build();
+                NbtMap newLecternTag = LecternUtils.getBaseLecternTag(position.getX(), position.getY(), position.getZ(), 0).build();
                 BlockEntityUtils.updateBlockEntity(session, newLecternTag, position);
             }
         }

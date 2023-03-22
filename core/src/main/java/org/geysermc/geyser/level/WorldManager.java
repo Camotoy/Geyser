@@ -121,7 +121,7 @@ public abstract class WorldManager {
     /**
      * @return whether we should expect lectern data to update, or if we have to fall back on a workaround.
      */
-    public abstract boolean shouldExpectLecternHandled();
+    public abstract boolean shouldExpectLecternHandled(GeyserSession session);
 
     /**
      * Updates a gamerule value on the Java server

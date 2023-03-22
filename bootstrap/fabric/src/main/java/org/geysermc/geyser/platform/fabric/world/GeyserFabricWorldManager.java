@@ -51,7 +51,6 @@ import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 
 public class GeyserFabricWorldManager extends GeyserWorldManager {
     private final MinecraftServer server;
@@ -61,7 +60,7 @@ public class GeyserFabricWorldManager extends GeyserWorldManager {
     }
 
     @Override
-    public boolean shouldExpectLecternHandled() {
+    public boolean shouldExpectLecternHandled(GeyserSession session) {
         return true;
     }
 

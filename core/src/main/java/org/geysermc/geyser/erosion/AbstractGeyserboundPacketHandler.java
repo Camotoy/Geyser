@@ -47,6 +47,11 @@ public abstract class AbstractGeyserboundPacketHandler implements GeyserboundPac
     }
 
     @Override
+    public void handleBlockEntity(GeyserboundBlockEntityPacket packet) {
+        illegalPacket(packet);
+    }
+
+    @Override
     public void handleBlockId(GeyserboundBlockIdPacket packet) {
         illegalPacket(packet);
     }

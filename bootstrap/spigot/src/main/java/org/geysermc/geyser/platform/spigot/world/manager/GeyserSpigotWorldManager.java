@@ -27,31 +27,25 @@ package org.geysermc.geyser.platform.spigot.world.manager;
 
 import com.github.steveice10.mc.protocol.data.game.level.block.BlockEntityInfo;
 import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
-import com.nukkitx.math.vector.Vector3i;
 import com.nukkitx.nbt.NbtMap;
-import com.nukkitx.nbt.NbtMapBuilder;
-import com.nukkitx.nbt.NbtType;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.World;
 import org.bukkit.block.Block;
-import org.bukkit.block.Lectern;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.plugin.Plugin;
+import org.geysermc.erosion.bukkit.BukkitLecterns;
+import org.geysermc.erosion.bukkit.BukkitUtils;
 import org.geysermc.erosion.bukkit.PickBlockUtils;
 import org.geysermc.geyser.level.GameRule;
 import org.geysermc.geyser.level.WorldManager;
 import org.geysermc.geyser.level.block.BlockStateValues;
 import org.geysermc.geyser.registry.BlockRegistries;
 import org.geysermc.geyser.session.GeyserSession;
-import org.geysermc.geyser.translator.inventory.LecternInventoryTranslator;
 import org.geysermc.geyser.util.BlockEntityUtils;
 import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.Nonnull;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -60,9 +54,11 @@ import java.util.concurrent.CompletableFuture;
  */
 public class GeyserSpigotWorldManager extends WorldManager {
     private final Plugin plugin;
+    private final BukkitLecterns lecterns;
 
     public GeyserSpigotWorldManager(Plugin plugin) {
         this.plugin = plugin;
+        this.lecterns = new BukkitLecterns(plugin);
     }
 
     @Override
@@ -125,56 +121,14 @@ public class GeyserSpigotWorldManager extends WorldManager {
     }
 
     private void sendLecternData(GeyserSession session, Block block, boolean isChunkLoad) {
-        int x = block.getX();
-        int y = block.getY();
-        int z = block.getZ();
-        if (!(block.getState() instanceof Lectern lectern)) {
-            session.getGeyser().getLogger().error("Lectern expected at: " + Vector3i.from(x, y, z).toString() + " but was not! " + block.toString());
-            return;
+        NbtMap blockEntityTag = this.lecterns.getLecternData(block, isChunkLoad);
+        if (blockEntityTag != null) {
+            BlockEntityUtils.updateBlockEntity(session, blockEntityTag, BukkitUtils.getVector(block.getLocation()));
         }
-
-        ItemStack itemStack = lectern.getInventory().getItem(0);
-        if (itemStack == null || !(itemStack.getItemMeta() instanceof BookMeta bookMeta)) {
-            if (!isChunkLoad) {
-                // We need to update the lectern since it's not going to be updated otherwise
-                BlockEntityUtils.updateBlockEntity(session, LecternInventoryTranslator.getBaseLecternTag(x, y, z, 0).build(), Vector3i.from(x, y, z));
-            }
-            // We don't care; return
-            return;
-        }
-
-        // On the count: allow the book to show/open even there are no pages. We know there is a book here, after all, and this matches Java behavior
-        boolean hasBookPages = bookMeta.getPageCount() > 0;
-        NbtMapBuilder lecternTag = LecternInventoryTranslator.getBaseLecternTag(x, y, z, hasBookPages ? bookMeta.getPageCount() : 1);
-        lecternTag.putInt("page", lectern.getPage() / 2);
-        NbtMapBuilder bookTag = NbtMap.builder()
-                .putByte("Count", (byte) itemStack.getAmount())
-                .putShort("Damage", (short) 0)
-                .putString("Name", "minecraft:writable_book");
-        List<NbtMap> pages = new ArrayList<>(bookMeta.getPageCount());
-        if (hasBookPages) {
-            for (String page : bookMeta.getPages()) {
-                NbtMapBuilder pageBuilder = NbtMap.builder()
-                        .putString("photoname", "")
-                        .putString("text", page);
-                pages.add(pageBuilder.build());
-            }
-        } else {
-            // Empty page
-            NbtMapBuilder pageBuilder = NbtMap.builder()
-                    .putString("photoname", "")
-                    .putString("text", "");
-            pages.add(pageBuilder.build());
-        }
-
-        bookTag.putCompound("tag", NbtMap.builder().putList("pages", NbtType.COMPOUND, pages).build());
-        lecternTag.putCompound("book", bookTag.build());
-        NbtMap blockEntityTag = lecternTag.build();
-        BlockEntityUtils.updateBlockEntity(session, blockEntityTag, Vector3i.from(x, y, z));
     }
 
     @Override
-    public boolean shouldExpectLecternHandled() {
+    public boolean shouldExpectLecternHandled(GeyserSession session) {
         return true;
     }
 

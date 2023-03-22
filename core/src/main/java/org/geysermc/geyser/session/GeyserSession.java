@@ -262,7 +262,7 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource {
 
     /**
      * Stores a list of all lectern locations and their block entity tags.
-     * See {@link WorldManager#getLecternDataAt(GeyserSession, int, int, int, boolean)}
+     * See {@link WorldManager#sendLecternData(GeyserSession, int, int, int)}
      * for more information.
      */
     private final Set<Vector3i> lecternCache;
@@ -588,7 +588,7 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource {
         this.spawned = false;
         this.loggedIn = false;
 
-        if (geyser.getWorldManager().shouldExpectLecternHandled()) {
+        if (geyser.getWorldManager().shouldExpectLecternHandled(this)) {
             // Unneeded on these platforms
             this.lecternCache = null;
         } else {
